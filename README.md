@@ -5,4 +5,5 @@ for the course *Principles of Programming Languages*, 2020 at IIIT Hyderabad.
 ## Directory layout
 
 |     Path     |       Contents       |
+|     ----     |       --------       |
 |      /hw     | Homework assignments |
