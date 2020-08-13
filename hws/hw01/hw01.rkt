@@ -16,7 +16,7 @@
 (define (invert lst)
   (cond
     [(empty? lst) empty]
-    [else (cons (cons (car (cdr (car lst))) (car (car lst))) (invert (cdr lst)))]))
+    [else (cons (cons (second (car lst)) (cons (first (car lst)) empty)) (invert (cdr lst)))]))
 
 (define (count-occurrences s slist) 
   (cond
