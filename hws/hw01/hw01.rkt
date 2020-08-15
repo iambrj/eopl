@@ -28,8 +28,8 @@
     [(and (empty? sos1) (empty? sos2)) empty]
     [(empty? sos1) sos2]
     [(empty? sos2) sos1]
-    [(= (length sos1) 1) (listmap (lambda (x) (cons (car sos1) x)) sos2)]
-    [else (append (listmap (lambda (x) (cons (car sos1) x)) sos2) (product (cdr sos1) sos2))]))
+    [(= (length sos1) 1) (listmap (lambda (x) (list (car sos1) x)) sos2)]
+    [else (append (listmap (lambda (x) (list (car sos1) x)) sos2) (product (cdr sos1) sos2))]))
 
 (define (every? pred lst)
   (cond
