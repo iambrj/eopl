@@ -1,0 +1,385 @@
+#+NAME: Homework Assignment 02 : Solution
+
+* Introduction
+
+  This is the solution to the sample homework assigment.
+
+* Problem No. 1.1 : Repeat
+
+** Solution
+    =repeat= checks whether =n= is zero, if so returns the empty list.
+    Otherwise it conses =x= with a recursive call to itself on =n-1=.
+
+#+NAME: repeat
+#+BEGIN_SRC racket
+(define (repeat n x)
+  (cond
+    [(= n 0) empty]
+    [(> n 0) (cons x (repeat (- n 1) x))]
+    [else (error "Bad n")]))
+#+END_SRC
+
+
+* Problem No. 1.2 : Invert
+
+** Solution
+    =invert= checks if the passed list is =empty= and if so returns =empty=
+    without doing anything. Otherwise it flips the first element, calls itself
+    recursively on rest of the list and conses these two together.
+   
+#+NAME: invert
+#+BEGIN_SRC racket
+(define (invert lst)
+  (cond
+    [(empty? lst) empty]
+    [else (cons (cons (second (car lst)) (cons (first (car lst)) empty)) (invert (cdr lst)))]))
+#+END_SRC
+
+* Problem No. 1.3 : Count Occurrences
+
+** Solution
+    =count-occurrences= checks whether the passed list is empty and if so
+    returns =0=. Otherwise it compares the first element of the list and adds a
+    =0= or =1= corresponding to it being equal/not equal to =s= respectively to
+    the recursive call to itself on the rest of the list.
+   
+#+NAME: count-occurrences
+#+BEGIN_SRC racket
+(define (count-occurrences s slist) 
+  (cond
+    [(empty? slist) 0]
+    [else (+ (if (= s (car slist)) 1 0) (count-occurrences s (cdr slist)))]))
+#+END_SRC
+
+* Problem No. 1.4 : 
+
+** Solution
+    To define =product= we first define an auxiliary function =listmap= which
+    takes two arguments, =fn= and =lst=, and applies =fn= to each element of =lst=.
+    It returns =empty= if the list is empty and otherwise conses the result of
+    applying =fn= to the first element and a recursive call.
+#+NAME: listmap
+#+BEGIN_SRC racket
+(define (listmap fn lst)
+  (cond
+    [(empty? lst) empty]
+    [else (cons (fn (car lst)) (listmap fn (cdr lst)))]))
+#+END_SRC
+
+    Now, to compute the cross product it first checks whether both the lists are
+    non-empty. If either one is empty, it simply returns the empty list.
+    Otherwise it takes the first element of the first list and conses it with
+    every element in the second list. This is done cleanly using =listmap= that
+    was previously defined by passing it a lambda function for consing. It then
+    recursively calls itself on the rest of the first list (i.e. without the first
+    element) and an unchanged second list.
+#+NAME: product
+#+BEGIN_SRC racket
+(define (product sos1 sos2)
+  (cond
+    [(and (empty? sos1) (empty? sos2)) empty]
+    [(empty? sos1) sos2]
+    [(empty? sos2) sos1]
+    [(= (length sos1) 1) (listmap (lambda (x) (list (car sos1) x)) sos2)]
+    [else (append (listmap (lambda (x) (list (car sos1) x)) sos2) (product (cdr sos1) sos2))]))
+#+END_SRC
+
+* Problem No. 1.5 : Every
+
+** Solution
+    =every= checks if the passed list is empty and if so returns =#t=. Otherwise
+    it checks whether the first element satisfies the predicate. If not, it
+    short-circuits and returns =#f=. If it does, it recursively calls itself on
+    the rest of the list.
+#+NAME: every?
+#+BEGIN_SRC racket
+(define (every? pred lst)
+  (cond
+    [(empty? lst) #t]
+    [else (and (pred (car lst)) (every? pred (cdr lst)))]))
+#+END_SRC
+#
+* Problem No. 1.6 : Merge
+
+** Solution
+    =merge= checks whether either of the passed lists is empty and if so
+    returns the other list. Otherwise, it compares the first elements in the
+    lists to find the minimum. It conses this with a recursive call to itself
+    with the rest of list with minimum and the other list unchanged.
+#+NAME: merge
+#+BEGIN_SRC racket
+(define (merge loi1 loi2)
+  (cond
+    [(empty? loi1) loi2]
+    [(empty? loi2) loi1]
+    [else
+      (cond
+        [(> (car loi1) (car loi2)) (cons (car loi2) (merge loi1 (cdr loi2)))]
+        [else (cons (car loi1) (merge (cdr loi1) loi2))])]))
+
+#+END_SRC
+* Problem No. 1.7 : Flatten
+    =flatten= keeps recursing as deep as possible and when it stops recursing,
+    it checks whether it hit a pair - which indicates the that list is nested
+    and not flat. If so, it calls it self recursively on both the first element
+    and the rest of the list and appends these two. If not, it means the list
+    isn't nested, so it simply returns it wrapped =list=. This wrapping is
+    needed since it descends to max depth, by removing the wrapping in the first
+    place.
+
+** Solution
+#+NAME: flatten
+#+BEGIN_SRC racket
+(define (flatten dlst)
+  (cond
+    [(empty? dlst) empty]
+    [else
+      (cond
+        [(pair? dlst) (append (flatten (car dlst)) (flatten (cdr dlst)))]
+        [else (list dlst)])]))
+#+END_SRC
+
+* Problem No. 2.1 : Preorder Traversal
+
+** Solution
+    The definition of a perorder traversal is to traverse current node, then
+    left subtree and finally right subtree. Thus, starting from the root,
+    preorder =list=s the value at current node and recursive calls it itself on
+    the left and right subtrees in that order. The base case is handled by
+    returning the value at the leaf.
+    
+#+NAME: traverse/perorder
+#+BEGIN_SRC racket
+(define (traverse/preorder tree)
+  (cases full-binary-tree tree
+         (internal-node (v l r) (append (list v) (traverse/preorder l) (traverse/preorder r)))
+         (leaf-node (v) (list v))))
+#+END_SRC
+
+* Problem No. 2.2 : Inorder
+
+** Solution
+    The definition of a inorder traversal is to traverse left subtree, then
+    current node and finally right subtree. Thus, starting from the root,
+    inorder =list=s a recursive call to the left subtree, value at current node
+    and a recursive call to the right subtree in that order. The base case is
+    handled by returning the value at the leaf.
+    
+#+NAME: traverse/inorder
+#+BEGIN_SRC racket
+(define (traverse/inorder tree)
+  (cases full-binary-tree tree
+         (internal-node (v l r) (append (traverse/inorder l) (list v) (traverse/inorder r)))
+         (leaf-node (v) (list v))))
+#+END_SRC
+
+* Problem No. 2.3 : Postorder
+
+** Solution
+    The definition of a postorder traversal is to traverse left subtree, then
+    right subtree and finally the current node. Thus, starting from the root,
+    postorder =list=s a recursive call to the left subtree, value at current node
+    and a recursive call to the right subtree in that order. The base case is
+    handled by returning the value at the leaf.
+    
+#+NAME: traverse/postorder
+#+BEGIN_SRC racket
+(define (traverse/inorder tree)
+  (cases full-binary-tree tree
+         (internal-node (v l r) (append (traverse/inorder l) (list v) (traverse/inorder r)))
+         (leaf-node (v) (list v))))
+#+END_SRC
+
+* Problem No. 2.4 : Count All Nodes
+
+** Solution
+    =count-nodes= increments count by 1 for current node and then recursively
+    calls itself on left and right subtrees until leaves are reached.
+
+#+NAME: count-nodes
+#+BEGIN_SRC racket
+(define (count-nodes tree)
+  (cases full-binary-tree tree
+         (internal-node (v l r) (+ 1 (count-nodes l) (count-nodes r)))
+         (leaf-node (v) (+ 1))))
+#+END_SRC
+
+* Problem No. 2.5 : Count Leaf Nodes
+
+** Solution
+    =count-leaves= increments the recursive count by 1 if current node turns
+    out to be a leaf and calls itself on left and right subtrees otherwise and
+    returns the sum.
+
+#+NAME: count-leaves
+#+BEGIN_SRC racket
+(define (count-leaves tree) 
+  (cases full-binary-tree tree
+         (internal-node (v l r) (+ (count-leaves l) (count-leaves r)))
+         (leaf-node (v) (+ 1))))
+#+END_SRC
+
+* Problem No. 2.6 : Count Internal Nodes
+
+** Solution
+    =count-internal= increments the recursive count by 1 if current node turns
+    out to be an internal node and calls itself on left and right subtrees
+    and returns the total sum. It increments the recursive count by 0 for leaves.
+
+#+NAME: count-internal
+#+BEGIN_SRC racket
+(define (count-internal tree) 
+  (cases full-binary-tree tree
+         (internal-node (v l r) (+ 1 (count-internal l) (count-internal r)))
+         (leaf-node (v) (+ 0))))
+#+END_SRC
+
+* Problem No. 2.7 : Map
+
+** Solution
+    =tree/map= applies the given function on the value at the current node.
+    Furthermore, if the current node turns out to be an internal node it
+    recursively calls itself on its left and right subtrees with the same
+    function =fn=.
+
+#+NAME: count-internal
+#+BEGIN_SRC racket
+(define (tree/map fn tr) 
+  (cases full-binary-tree tr
+         (internal-node (v l r) (inode (fn v) (tree/map fn l) (tree/map fn r)))
+         (leaf-node (v) (lnode (fn v)))))
+#+END_SRC
+
+* Problem No. 2.8 : Value at Path
+
+** Solution
+    =value-at-path= makes use of three auxiliary functions
+
+*** =left-subtree=
+    This takes a node and returns the left subtree rooted at that node
+#+NAME: left-subtree
+#+BEGIN_SRC racket
+(define (left-subtree tr)
+  (cases full-binary-tree tr
+         (internal-node (v l r) l)
+         (leaf-node (v) (error "Invalid subtree access"))))
+#+END_SRC
+
+*** =right-subtree=
+    This takes a node and returns the right subtree rooted at that node
+#+NAME: right-subtree
+#+BEGIN_SRC racket
+(define (right-subtree tr)
+  (cases full-binary-tree tr
+         (internal-node (v l r) r)
+         (leaf-node (v) (error "Invalid subtree access"))))
+#+END_SRC
+
+*** =treeval=
+    This takes a node and returns the value at that node (irrespective of type
+    of node i.e. internal or leaf)
+#+NAME: treeval
+#+BEGIN_SRC racket
+(define (treeval tr)
+  (cases full-binary-tree tr
+         (internal-node (v l r) v)
+         (leaf-node (v) v)))
+#+END_SRC
+    Finally, =count-internal= makes use of all three. If the =path= list turns
+    out to be empty, it simply returns the value at current tree. Otherwise, it
+    recursively calls itself on left/right subtree (as specified by the first element
+    in the path list) with appropriate arguments.
+
+#+NAME: count-internal
+#+BEGIN_SRC racket
+(define (value-at-path path tree)
+  (cond
+    [(empty? path)
+     (cases full-binary-tree tree
+        (internal-node (v l r) v)
+        (leaf-node (v) v))]
+    [(string=? (car path) "left") (value-at-path (cdr path) (left-subtree tree))]
+    [(string=? (car path) "right") (value-at-path (cdr path) (right-subtree tree))]
+    [else (error "Invalid path")]))
+#+END_SRC
+
+* Problem No. 2.9 : Search
+
+** Solution
+
+    =search= makes use of the auxiliary function =boolsearch=, which returns
+    true/false corresponding to presence/absence of a value in a tree.
+#+NAME: boolsearch
+#+BEGIN_SRC racket
+(define (boolsearch val tree)
+  (cases full-binary-tree tree
+         (internal-node (v l r)
+           (cond
+             [(= val v) #t]
+             [else (or (boolsearch val (left-subtree tree))
+                       (boolsearch val (right-subtree tree))
+                       #f)]))
+         (leaf-node (v)
+           (cond
+             [(= val v) #t]
+             [else #f]))))
+#+END_SRC
+
+    Search first checks whether value at current node is what it is looking for
+    and returns if so. Otherwise it calls =boolsearch= on both left and right
+    subtrees to check whether either of them have the node being searched. If
+    so, it recursively calls itself with the appropriate parameters and throws
+    an error otherwise
+#+NAME: search
+#+BEGIN_SRC racket
+(define (search val tree)
+  (cases full-binary-tree tree
+         (internal-node (v l r) 
+           (cond
+             [(= val v) (list)]
+             [(boolsearch val (left-subtree tree)) (append (list "left") (search val (left-subtree tree)))]
+             [(boolsearch val (right-subtree tree)) (append (list "right") (search val (right-subtree tree)))]
+             [else (error "Not found")]))
+         (leaf-node (v) (list))))
+#+END_SRC
+
+* Problem No. 2.10 : Update
+
+** Solution
+    =update= checks whether given path is empty and if so applies the function
+    at current root (maybe internal or leaf node). Otherwise, it recursively
+    calls itself on the appropriate subtree with the rest of the path list.
+
+#+NAME: update
+#+BEGIN_SRC racket
+(define (update path fn tree)
+  (cond
+    [(empty? path)
+     (cases full-binary-tree tree
+        (internal-node (v l r) (inode (fn v) l r))
+        (leaf-node (v) (lnode (fn v))))]
+    [(string=? (car path) "left") (inode (treeval tree) (update (cdr path) fn (left-subtree tree)) (right-subtree tree))]
+    [(string=? (car path) "right") (inode (treeval tree) (left-subtree tree) (update (cdr path) fn (right-subtree tree)))]
+    [else (error "Invalid path")]))
+#+END_SRC
+#
+* Problem No. 2.11 : Insert
+
+** Solution
+    =tree/insert= checks whether given path is empty and if so creates a new
+    node at current node if it is a leaf (and throws an error otherwise). For
+    nonempty path lists, it recursively calls itself with the appropriate
+    parameters.
+
+#+NAME: tree/insert
+#+BEGIN_SRC racket
+(define (tree/insert path left-st right-st tree)
+  (cond
+    [(empty? path)
+     (cases full-binary-tree tree
+        (internal-node (v l r) (error "Path doesn't lead to leaf"))
+        (leaf-node (v) (inode v left-st right-st)))]
+    [(string=? (car path) "left") (inode (treeval tree) (tree/insert (cdr path) left-st right-st (left-subtree tree)) (right-subtree tree))]
+    [(string=? (car path) "right") (inode (treeval tree) (left-subtree tree) (tree/insert (cdr path) left-st right-st (right-subtree tree)))]
+    [else (error "Invalid path")]))
+#+END_SRC
