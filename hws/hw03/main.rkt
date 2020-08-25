@@ -1,4 +1,5 @@
 #lang racket
+
 (require eopl)
 
 (define-datatype ast ast?
@@ -18,6 +19,17 @@
       ['eq? #t]
       [_ #f])))
 
+(define op-interpretation
+  (lambda (op)
+    (match op
+      ['add +]
+      ['sub -]
+      ['mul *]
+      ['div /]
+      ['lt? <]
+      ['eq? =]
+      [_ error 'op-interpretation "unknown op"])))
+
 (struct exn:parse-error exn:fail ())
 (define raise-parse-error
   (lambda (err)
@@ -32,6 +44,27 @@
 (define raise-exec-type-error
   (lambda ()
     (raise (exn:exec-type-error "types errored!" (current-continuation-marks)))))
+
+(struct exn:exec-type-mismatch exn:fail ())
+(define raise-exec-type-mismatch
+  (lambda ()
+    (raise (exn:exec-type-mismatch "type mismatch!" (current-continuation-marks)))))
+
+(define runtime-check
+  (lambda (pred? exn)
+    (lambda (v)
+      (if (pred? v)
+          v
+          (exn)))))
+
+(define typecheck-num
+  (runtime-check number?  raise-exec-type-mismatch))
+
+(define typecheck-bool
+  (runtime-check boolean? raise-exec-type-mismatch))
+
+(define check-non-zero
+  (runtime-check (not/c zero?) raise-exec-div-by-zero))
 
 #|
 (define ts-parsing
@@ -85,3 +118,10 @@
       [(eq? (first exp) 'if) (ifte (parse (second exp)) (parse (third exp)) (parse (fourth exp)))]
       [else raise-parse-error]
       ))
+
+(define (eval-ast a)
+  (cases ast a
+      (binop (op l r) ((op-interpretation op) (eval-ast l) (eval-ast r)))
+      (ifte (c t e) (if (eval-ast c) (eval-ast t) (eval-ast e)))
+      (num (n) n)
+      (bool (b) b)))
