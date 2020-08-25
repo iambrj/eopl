@@ -2,7 +2,7 @@
 
 * Introduction
 
-  This is the solution to the sample homework assigment.
+  This is the solution to the homework assigment 1.
 
 * Problem No. 1.1 : Repeat
 
@@ -98,7 +98,7 @@
     [(empty? lst) #t]
     [else (and (pred (car lst)) (every? pred (cdr lst)))]))
 #+END_SRC
-#
+
 * Problem No. 1.6 : Merge
 
 ** Solution
@@ -121,7 +121,7 @@
 * Problem No. 1.7 : Flatten
     =flatten= keeps recursing as deep as possible and when it stops recursing,
     it checks whether it hit a pair - which indicates the that list is nested
-    and not flat. If so, it calls it self recursively on both the first element
+    and not flat. If so, it calls itself recursively on both the first element
     and the rest of the list and appends these two. If not, it means the list
     isn't nested, so it simply returns it wrapped =list=. This wrapping is
     needed since it descends to max depth, by removing the wrapping in the first
