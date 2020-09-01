@@ -1,0 +1,335 @@
+#+NAME: Homework Assignment 02 : Solution
+* Introduction
+
+  This is the solution to the homework assigment 2.
+
+* Problem No. 1.1 : Repeat
+
+** Solution
+    =repeat= checks whether =n= is zero, if so returns the empty list.
+    Otherwise it conses =x= with a recursive call to itself on =n-1=.
+
+#+NAME: repeat 
+#+BEGIN_SRC
+module Main exposing (..)
+import Defns exposing (..)
+
+repeat n x =
+    if n == 0 then [] else x :: repeat (n - 1) x
+
+#+END_SRC
+
+* Problem No. 1.2 : Invert
+
+** Solution
+    =invert= checks if the passed list is empty and if so returns empty
+    without doing anything. Otherwise it calls the auxiliary method =inverList=
+    to flip each 2 element list recursively.
+
+#+NAME: invert
+#+BEGIN_SRC
+invertList l =
+    case l of
+        (h :: t) -> invertList t ++ [h]
+        []       -> []
+
+invert l =
+    case l of
+        (h :: t) -> invertList h :: invert t
+        []       -> []
+#+END_SRC
+
+* Problem No. 1.3 : Count Occurrences
+
+** Solution
+    =count-occurrences= checks whether the passed list is empty and if so
+    returns =0=. Otherwise it compares the first element of the list and adds a
+    =0= or =1= corresponding to it being equal/not equal to =s= respectively to
+    the recursive call to itself on the rest of the list.
+
+#+NAME: count_occurrences
+#+BEGIN_SRC
+count_occurrences : t -> List t -> Int
+count_occurrences s slist =
+    case slist of
+        (h :: t) -> if (h == s) then 1 + (count_occurrences s t) else (count_occurrences s t)
+        []       -> 0
+#+END_SRC
+
+* Problem No. 1.4 : 
+
+** Solution
+    To define =product= we first uses =map= to find the cross product of head of
+    first list with ever element of second list recursively.
+
+#+NAME: product
+#+BEGIN_SRC
+product l1 l2 =
+    case (l1, l2) of
+        (h1 :: t1, h2 :: t2) -> List.map (\x -> [h1, x]) (h2 :: t2) ++ (product t1 (h2 :: t2))
+        _                    -> []
+#+END_SRC
+
+* Problem No. 1.5 : Every
+
+** Solution
+    =every= checks if the passed list is empty and if so returns =True=. Otherwise
+    it checks whether the first element satisfies the predicate. If not, it
+    short-circuits and returns =False=. If it does, it recursively calls itself on
+    the rest of the list.
+#+NAME: every
+#+BEGIN_SRC
+every pred l =
+    case l of
+        h :: t -> if not (pred h) then False else every pred t
+        []     -> True
+#+END_SRC
+
+* Problem No. 1.6 : Merge
+
+** Solution
+    =merge= checks whether either of the passed lists is empty and if so
+    returns the other list. Otherwise, it compares the first elements in the
+    lists to find the minimum. It conses this with a recursive call to itself
+    with the rest of list with minimum and the other list unchanged.
+#+NAME: merge
+#+BEGIN_SRC
+merge l1 l2 =
+    case (l1, l2) of
+        (h1::t1, h2::t2) -> if h1 < h2 then h1 :: merge t1 l2 else h2 :: merge l1 t2
+        ([], _) -> l2
+        (_, _) -> l1
+#+END_SRC
+
+* Problem No. 2.1 : Preorder Traversal
+
+** Solution
+    The definition of a perorder traversal is to traverse current node, then
+    left subtree and finally right subtree. Thus, starting from the root,
+    preorder =list=s the value at current node and recursive calls it itself on
+    the left and right subtrees in that order. The base case is handled by
+    returning the value at the leaf.
+    
+#+NAME: perorder
+#+BEGIN_SRC
+preorder t =
+    case t of
+        Leaf i -> [i]
+        Node i l r -> [i] ++ preorder l ++ preorder r
+#+END_SRC
+
+* Problem No. 2.2 : Inorder
+
+** Solution
+    The definition of a inorder traversal is to traverse left subtree, then
+    current node and finally right subtree. Thus, starting from the root,
+    inorder =list=s a recursive call to the left subtree, value at current node
+    and a recursive call to the right subtree in that order. The base case is
+    handled by returning the value at the leaf.
+
+#+NAME: inorder
+#+BEGIN_SRC
+inorder t =
+    case t of
+        Leaf i -> [i]
+        Node i l r -> inorder l ++ [i] ++ inorder r
+#+END_SRC
+
+* Problem No. 2.3 : Postorder
+
+** Solution
+    The definition of a postorder traversal is to traverse left subtree, then
+    right subtree and finally the current node. Thus, starting from the root,
+    postorder =list=s a recursive call to the left subtree, value at current node
+    and a recursive call to the right subtree in that order. The base case is
+    handled by returning the value at the leaf.
+
+#+NAME: postorder
+#+BEGIN_SRC
+postorder t =
+    case t of
+        Leaf i -> [i]
+        Node i l r -> postorder l ++ postorder r ++ [i]
+#+END_SRC
+
+* Problem No. 2.4 : Count All Nodes
+
+** Solution
+    =count_nodes= increments count by 1 for current node and then recursively
+    calls itself on left and right subtrees until leaves are reached.
+
+#+NAME: count_nodes
+#+BEGIN_SRC
+count_nodes t =
+    case t of
+        Leaf i -> 1
+        Node i l r -> 1 + count_nodes l + count_nodes r
+
+#+END_SRC
+
+* Problem No. 2.5 : Count Leaf Nodes
+
+** Solution
+    =count-leaves= increments the recursive count by 1 if current node turns
+    out to be a leaf and calls itself on left and right subtrees otherwise and
+    returns the sum.
+
+#+NAME: count_leaves
+#+BEGIN_SRC
+count_leaves t =
+    case t of
+        Leaf i -> 1
+        Node i l r -> count_leaves l + count_leaves r
+#+END_SRC
+
+* Problem No. 2.6 : Count Internal Nodes
+
+** Solution
+    =count_internal= increments the recursive count by 1 if current node turns
+    out to be an internal node and calls itself on left and right subtrees
+    and returns the total sum. It increments the recursive count by 0 for leaves.
+
+#+NAME: count_internal
+#+BEGIN_SRC
+count_internal t =
+    case t of
+        Leaf i -> 0
+        Node i l r -> 1 + count_internal l + count_internal r
+#+END_SRC
+
+* Problem No. 2.7 : Map
+
+** Solution
+    =treeMap= applies the given function on the value at the current node.
+    Furthermore, if the current node turns out to be an internal node it
+    recursively calls itself on its left and right subtrees with the same
+    function =f=.
+#+NAME: treeMap
+#+BEGIN_SRC
+treeMap : (Int -> Int) -> Tree -> Tree
+treeMap f t =
+    case t of
+        Leaf i -> Leaf (f i)
+        Node i l r -> Node (f i) (treeMap f l) (treeMap f r)
+#+END_SRC
+* Problem No. 2.8 : Value at Path
+
+** Solution
+    =value-at-path= makes use of two auxiliary functions, =value= which returns
+    the value at the root of the passed tree and subtree which returns the
+    left/right subtree corresponding to option passed.
+
+#+NAME: aux
+#+BEGIN_SRC
+value : Tree -> Int
+value t =
+    case t of
+        Leaf v -> v
+        Node v l r -> v
+
+subtree : PathItem -> Tree -> Maybe Tree
+subtree p t = case t of
+        Leaf _ -> Nothing
+        Node _ l r -> if p == Left then Just l else Just r
+#+END_SRC
+
+    =value_at_path= returns value at root of current subtree if path list is
+    empty, otherwise calls itself recursively using appropriate parameters by
+    consing left/right as head.
+
+#+NAME: value_at_path
+#+BEGIN_SRC
+value_at_path : List PathItem -> Tree -> Maybe Int
+value_at_path p tree =
+    case p of
+        [] -> Just (value tree)
+        (h :: t) -> case h of
+            Left -> case (subtree Left tree) of
+                Just l -> value_at_path t l
+                Nothing -> Nothing
+            Right -> case (subtree Right tree) of
+                Just r -> value_at_path t r
+                Nothing -> Nothing
+#+END_SRC
+* Problem No. 2.9 : Search
+
+** Solution
+
+    =search= makes use of two auxiliary functions =altor=, which combines two
+    =Maybe= types by returning the value wrapped in =Just= (if it exists) or returns
+    =Nothing= and =combine= which applies =altor= over two lists wrapped inside
+    =Maybe=s.
+
+#+NAME: aux2
+#+BEGIN_SRC
+altor : Maybe a -> Maybe a -> Maybe a
+altor x y = case x of
+    Just _ -> x
+    _ -> y
+
+combine : Maybe (List t) -> Maybe (List t) -> Maybe (List t)
+combine l1 l2 =
+    case (l1, l2) of
+        (Just ll1, Just ll2) -> Just (ll1 ++ ll2)
+        (_, _) -> Nothing
+#+END_SRC
+    =search= checks if root of current subtree matches with the value being
+    searched for and returns immediately if so. Otherwise, it calls itself
+    recursivley on left and right subtrees and uses =combine= to check whether
+    the value was found in either subtrees.
+#+NAME: search
+#+BEGIN_SRC
+search : Int -> Tree -> Maybe (List PathItem)
+search x t = case t of
+    Leaf v -> if v == x then Just [] else Nothing
+    Node v l r -> if v == x
+        then Just []
+        else altor (combine (Just [Left]) (search x l)) (combine (Just [Right]) (search x r))
+#+END_SRC
+
+* Problem No. 2.10 : Update
+
+** Solution
+    =update= checks whether given path is empty and if so applies the function
+    at current root (maybe internal or leaf node). Otherwise, it recursively
+    calls itself on the appropriate subtree with the rest of the path list.
+
+#+NAME: update
+#+BEGIN_SRC
+updateVal f t =
+    case t of
+        Leaf v -> Leaf (f v)
+        Node v l r -> Node (f v) l r
+
+update : List PathItem -> (Int -> Int) -> Tree -> Tree
+update p f t =
+    case p of
+        [] -> updateVal f t
+        (h::hs) -> case h of
+            Left -> case (subtree Left t) of
+                Just l -> update hs f l
+                Nothing -> t
+            Right -> case (subtree Right t) of
+                Just r -> update hs f r
+                Nothing -> t
+#+END_SRC
+
+* Problem No. 2.11 : Insert
+
+** Solution
+    =tree_insert= checks whether given path is empty and if so creates a new
+    node at current node if it is a leaf (and throws an error otherwise). For
+    nonempty path lists, it recursively calls itself with the appropriate
+    parameters.
+
+#+NAME: tree_insert
+#+BEGIN_SRC racket
+tree_insert : List PathItem -> Tree -> Tree -> Tree -> Tree
+tree_insert p l r t = case p of
+    [] -> case t of
+        Leaf v -> Node v l r
+        Node _ _ _ -> t
+    h::hs -> case (subtree h t) of
+        Nothing -> t
+        Just s -> tree_insert hs l r s
+#+END_SRC
