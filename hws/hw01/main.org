@@ -1,4 +1,4 @@
-#+NAME: Homework Assignment 02 : Solution
+#+NAME: Homework Assignment 01 : Solution
 
 * Introduction
 
@@ -91,12 +91,12 @@
     it checks whether the first element satisfies the predicate. If not, it
     short-circuits and returns =#f=. If it does, it recursively calls itself on
     the rest of the list.
-#+NAME: every?
+#+NAME: every
 #+BEGIN_SRC racket
-(define (every? pred lst)
+(define (every pred lst)
   (cond
     [(empty? lst) #t]
-    [else (and (pred (car lst)) (every? pred (cdr lst)))]))
+    [else (and (pred (car lst)) (every pred (cdr lst)))]))
 #+END_SRC
 
 * Problem No. 1.6 : Merge
@@ -184,9 +184,9 @@
     
 #+NAME: traverse/postorder
 #+BEGIN_SRC racket
-(define (traverse/inorder tree)
+(define (traverse/postorder tree)
   (cases full-binary-tree tree
-         (internal-node (v l r) (append (traverse/inorder l) (list v) (traverse/inorder r)))
+         (internal-node (v l r) (append (traverse/postorder l) (traverse/postorder r) (list v)))
          (leaf-node (v) (list v))))
 #+END_SRC
 
@@ -358,8 +358,8 @@
      (cases full-binary-tree tree
         (internal-node (v l r) (inode (fn v) l r))
         (leaf-node (v) (lnode (fn v))))]
-    [(string=? (car path) "left") (inode (treeval tree) (update (cdr path) fn (left-subtree tree)) (right-subtree tree))]
-    [(string=? (car path) "right") (inode (treeval tree) (left-subtree tree) (update (cdr path) fn (right-subtree tree)))]
+    [(equal? (car path) "left") (inode (treeval tree) (update (cdr path) fn (left-subtree tree)) (right-subtree tree))]
+    [(equal? (car path) "right") (inode (treeval tree) (left-subtree tree) (update (cdr path) fn (right-subtree tree)))]
     [else (error "Invalid path")]))
 #+END_SRC
 #
@@ -382,4 +382,37 @@
     [(string=? (car path) "left") (inode (treeval tree) (tree/insert (cdr path) left-st right-st (left-subtree tree)) (right-subtree tree))]
     [(string=? (car path) "right") (inode (treeval tree) (left-subtree tree) (tree/insert (cdr path) left-st right-st (right-subtree tree)))]
     [else (error "Invalid path")]))
+#+END_SRC
+
+* Tangle
+
+#+BEGIN_SRC racket :noweb yes :tangle ./main.rkt
+#lang racket
+ 
+(require eopl)
+
+(require "datatypes.rkt")
+
+<<repeat>>
+<<invert>>
+<<count-occurrences>>
+<<listmap>>
+<<product>>
+<<every>>
+<<merge>>
+<<flatten>>
+<<traverse/perorder>>
+<<traverse/inorder>>
+<<traverse/postorder>>
+<<count-nodes>>
+<<count-leaves>>
+<<count-internal>>
+<<left-subtree>>
+<<right-subtree>>
+<<treeval>>
+<<boolsearch>>
+<<search>>
+<<update>>
+<<tree/insert>>
+(provide (all-defined-out))
 #+END_SRC
