@@ -122,7 +122,9 @@
            [empty-env () raise-lookup-error]
            [extended-env (syms vals outer)
                          (let ([idx (index-of syms x)])
-                           (if idx (list-ref vals idx) raise-lookup-error))]))) ;; your solution here.
+                           (if idx
+                               (list-ref vals idx)
+                               (lookup-env outer x)))]))) ;; your solution here.
 
 (define mock-env (extended-env (list 'x) (list 10) (empty-env)))
 
@@ -176,7 +178,26 @@
 (define eval-ast
   (lambda (a e)
     ;; your solution here
-    1))
+    (cases ast a
+           [unaryop (op arg) (not (typecheck-bool (eval-ast arg e)))]
+           [binop (op arg1 arg2) ((op-interpretation op)
+                                  (typecheck-num (eval-ast arg1 e))
+                                  (if (equal? op 'div)
+                                      (check-non-zero (typecheck-num
+                                                        ((eval-ast arg2 e))))
+                                      (typecheck-num ((eval-ast arg2 e)))))]
+           [ifte (pred then otherwise) (if (typecheck-bool (eval-ast pred e))
+                                           (eval-ast then e)
+                                           (eval-ast otherwise e))]
+           [num (n) (n)]
+           [bool (b) (b)]
+           [assume (binds expr) (eval-ast
+                                  expr
+                                  (extended-env
+                                    (map (lambda (x) (bind-id x)) binds)
+                                    (map (lambda (x) (bind-ast x)) binds) e))]
+           [id-ref (id) (lookup-env e id)]
+           )))
 
 (define unaryop?
   (lambda (x)
