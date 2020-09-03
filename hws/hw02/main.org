@@ -10,13 +10,9 @@
     Otherwise it conses =x= with a recursive call to itself on =n-1=.
 
 #+NAME: repeat 
-#+BEGIN_SRC
-module Main exposing (..)
-import Defns exposing (..)
-
+#+BEGIN_SRC elm
 repeat n x =
     if n == 0 then [] else x :: repeat (n - 1) x
-
 #+END_SRC
 
 * Problem No. 1.2 : Invert
@@ -27,7 +23,7 @@ repeat n x =
     to flip each 2 element list recursively.
 
 #+NAME: invert
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 invertList l =
     case l of
         (h :: t) -> invertList t ++ [h]
@@ -48,7 +44,7 @@ invert l =
     the recursive call to itself on the rest of the list.
 
 #+NAME: count_occurrences
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 count_occurrences : t -> List t -> Int
 count_occurrences s slist =
     case slist of
@@ -63,7 +59,7 @@ count_occurrences s slist =
     first list with ever element of second list recursively.
 
 #+NAME: product
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 product l1 l2 =
     case (l1, l2) of
         (h1 :: t1, h2 :: t2) -> List.map (\x -> [h1, x]) (h2 :: t2) ++ (product t1 (h2 :: t2))
@@ -78,7 +74,7 @@ product l1 l2 =
     short-circuits and returns =False=. If it does, it recursively calls itself on
     the rest of the list.
 #+NAME: every
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 every pred l =
     case l of
         h :: t -> if not (pred h) then False else every pred t
@@ -93,7 +89,7 @@ every pred l =
     lists to find the minimum. It conses this with a recursive call to itself
     with the rest of list with minimum and the other list unchanged.
 #+NAME: merge
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 merge l1 l2 =
     case (l1, l2) of
         (h1::t1, h2::t2) -> if h1 < h2 then h1 :: merge t1 l2 else h2 :: merge l1 t2
@@ -111,7 +107,7 @@ merge l1 l2 =
     returning the value at the leaf.
     
 #+NAME: perorder
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 preorder t =
     case t of
         Leaf i -> [i]
@@ -128,7 +124,7 @@ preorder t =
     handled by returning the value at the leaf.
 
 #+NAME: inorder
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 inorder t =
     case t of
         Leaf i -> [i]
@@ -145,7 +141,7 @@ inorder t =
     handled by returning the value at the leaf.
 
 #+NAME: postorder
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 postorder t =
     case t of
         Leaf i -> [i]
@@ -159,7 +155,7 @@ postorder t =
     calls itself on left and right subtrees until leaves are reached.
 
 #+NAME: count_nodes
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 count_nodes t =
     case t of
         Leaf i -> 1
@@ -175,7 +171,7 @@ count_nodes t =
     returns the sum.
 
 #+NAME: count_leaves
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 count_leaves t =
     case t of
         Leaf i -> 1
@@ -190,7 +186,7 @@ count_leaves t =
     and returns the total sum. It increments the recursive count by 0 for leaves.
 
 #+NAME: count_internal
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 count_internal t =
     case t of
         Leaf i -> 0
@@ -200,17 +196,17 @@ count_internal t =
 * Problem No. 2.7 : Map
 
 ** Solution
-    =treeMap= applies the given function on the value at the current node.
+    =tree_map= applies the given function on the value at the current node.
     Furthermore, if the current node turns out to be an internal node it
     recursively calls itself on its left and right subtrees with the same
     function =f=.
 #+NAME: treeMap
-#+BEGIN_SRC
-treeMap : (Int -> Int) -> Tree -> Tree
-treeMap f t =
+#+BEGIN_SRC elm
+tree_map : (Int -> Int) -> Tree -> Tree
+tree_map f t =
     case t of
         Leaf i -> Leaf (f i)
-        Node i l r -> Node (f i) (treeMap f l) (treeMap f r)
+        Node i l r -> Node (f i) (tree_map f l) (tree_map f r)
 #+END_SRC
 * Problem No. 2.8 : Value at Path
 
@@ -220,7 +216,7 @@ treeMap f t =
     left/right subtree corresponding to option passed.
 
 #+NAME: aux
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 value : Tree -> Int
 value t =
     case t of
@@ -238,7 +234,7 @@ subtree p t = case t of
     consing left/right as head.
 
 #+NAME: value_at_path
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 value_at_path : List PathItem -> Tree -> Maybe Int
 value_at_path p tree =
     case p of
@@ -261,7 +257,7 @@ value_at_path p tree =
     =Maybe=s.
 
 #+NAME: aux2
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 altor : Maybe a -> Maybe a -> Maybe a
 altor x y = case x of
     Just _ -> x
@@ -278,7 +274,7 @@ combine l1 l2 =
     recursivley on left and right subtrees and uses =combine= to check whether
     the value was found in either subtrees.
 #+NAME: search
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 search : Int -> Tree -> Maybe (List PathItem)
 search x t = case t of
     Leaf v -> if v == x then Just [] else Nothing
@@ -295,7 +291,7 @@ search x t = case t of
     calls itself on the appropriate subtree with the rest of the path list.
 
 #+NAME: update
-#+BEGIN_SRC
+#+BEGIN_SRC elm
 updateVal f t =
     case t of
         Leaf v -> Leaf (f v)
@@ -323,7 +319,7 @@ update p f t =
     parameters.
 
 #+NAME: tree_insert
-#+BEGIN_SRC racket
+#+BEGIN_SRC elm
 tree_insert : List PathItem -> Tree -> Tree -> Tree -> Tree
 tree_insert p l r t = case p of
     [] -> case t of
@@ -332,4 +328,32 @@ tree_insert p l r t = case p of
     h::hs -> case (subtree h t) of
         Nothing -> t
         Just s -> tree_insert hs l r s
+#+END_SRC
+
+* Tangle
+  
+#+BEGIN_SRC elm :noweb yes :padline no :tangle ./src/Main.elm
+module Main exposing (..)
+import Defns exposing (..)
+
+<<repeat>>
+<<invert>>
+<<count_occurrences>>
+<<product>>
+<<every>>
+<<merge>>
+<<perorder>>
+<<inorder>>
+<<postorder>>
+<<count_nodes>>
+<<count_leaves>>
+<<count_internal>>
+<<treeMap>>
+<<aux>>
+<<value_at_path>>
+<<aux2>>
+<<search>>
+<<update>>
+<<tree_insert>>
+
 #+END_SRC
