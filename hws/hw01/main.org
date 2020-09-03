@@ -262,7 +262,7 @@
 (define (left-subtree tr)
   (cases full-binary-tree tr
          (internal-node (v l r) l)
-         (leaf-node (v) (error "Invalid subtree access"))))
+         (leaf-node (v) #f)))
 #+END_SRC
 
 *** =right-subtree=
@@ -272,7 +272,7 @@
 (define (right-subtree tr)
   (cases full-binary-tree tr
          (internal-node (v l r) r)
-         (leaf-node (v) (error "Invalid subtree access"))))
+         (leaf-node (v) #f)))
 #+END_SRC
 
 *** =treeval=
@@ -348,11 +348,25 @@
 ** Solution
     =update= checks whether given path is empty and if so applies the function
     at current root (maybe internal or leaf node). Otherwise, it recursively
-    calls itself on the appropriate subtree with the rest of the path list.
+    calls itself on the appropriate subtree with the rest of the path list. It
+    first calls =badpath= to check whether the passsed path does not exist, and
+    if so it immediately returns the unchanged tree.
 
 #+NAME: update
 #+BEGIN_SRC racket
+(define (badpath path tree) 
+  (if (empty? path) #f
+    (cond
+    [(equal? (car path) "left") (if (boolean? (left-subtree tree))
+				    #t
+				    (badpath (cdr path) (left-subtree tree)))]
+    [(equal? (car path) "right") (if (boolean? (right-subtree tree))
+				     #t
+				     (badpath (cdr path) (right-subtree tree)))]
+    [else #t])))
+
 (define (update path fn tree)
+(if (badpath path tree) tree
   (cond
     [(empty? path)
      (cases full-binary-tree tree
@@ -360,9 +374,9 @@
         (leaf-node (v) (lnode (fn v))))]
     [(equal? (car path) "left") (inode (treeval tree) (update (cdr path) fn (left-subtree tree)) (right-subtree tree))]
     [(equal? (car path) "right") (inode (treeval tree) (left-subtree tree) (update (cdr path) fn (right-subtree tree)))]
-    [else (error "Invalid path")]))
+    [else tree])))
 #+END_SRC
-#
+
 * Problem No. 2.11 : Insert
 
 ** Solution
