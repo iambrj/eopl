@@ -120,6 +120,11 @@ The function =raise-parse-error=, given below raises an
 
 You need to complete this definition.
 
+=parse= uses two auxiliary methods: =is-binop?= and
+=binop->ast=. The former takes a symbol and returns true if the
+symbol is is a binary operator and false otherwise using a
+=match=. The latter returns the appropriate AST constructor for
+the operator.
 #+NAME: parseAuxiliary
 #+BEGIN_SRC racket
 (define (is-binop? t)
@@ -144,6 +149,11 @@ You need to complete this definition.
     [_ 'error]
     ))
 #+END_SRC
+
+=parse= checks if the passed symbol matches any of the concrete
+syntax.  If so, it generates the appropriate AST by calling the
+corresponding constructor. It recursively calls on further
+symbols for appropriate constructor arguments.
 
 #+NAME: parse
 #+BEGIN_SRC racket
