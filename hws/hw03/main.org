@@ -293,6 +293,11 @@ i.e., actual functions that operate on expressible values.
 #+END_SRC
 
 ** =eval-ast= (You need to implement this)
+=eval-ast= takes an AST and retunrs an expressible value. It
+uses the =case= construct from =eopl= to perform pattern
+matching against the =ast= abstract data type. It wraps
+appropriate expressions with exception handlers to check for
+division by zero and type mismatches.
 #+NAME: eval-ast
 #+BEGIN_SRC racket
 ;;; eval-ast :: ast? -> expressible? || (or/c exn:exec-div-by-zero  exn:exec-type-mismatch)
