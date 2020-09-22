@@ -413,13 +413,20 @@ The function =raise-parse-error=, given below raises an
       [else #t])))
 #+END_SRC
    
-** Lookup (You need to implement this)
+** Lookup
 
    To access the bound value of variable in the current environment
-   the function =(lookup-env e s)= takes the enviroment =e= and a
+   the function =(lookup-env e s)= takes the environment =e= and a
    variable (symbol) =s= and returns the value that is bound to the
    variable or raises an error if the variable does not have any
    binding for =s=.
+
+   =lookup-env= uses the standard library's =index-of= to get the position of
+   the symbol in the environment. If such an index exists, it uses the standard
+   library's =list-ref= to fetch the element at that index. If not, it
+   recursively searches the outer environment. The base case for recursion is
+   when a lookup happens in the empty environment, in which case an error is
+   raised.
 
 #+NAME: lookup-env
 #+BEGIN_SRC racket
@@ -560,7 +567,24 @@ i.e., actual functions that operate on expressible values.
       [_ error 'op-interpretation "unknown op"])))
 #+END_SRC
 
-** =eval-ast= (You need to implement this)
+** =eval-ast=
+
+   =eval-ast= uses =cases= from =eopl= to pattern match the abstract datatypes.
+    1. =unaryop=: it recursively calls itself on the argument with the same
+                  environment and performs typechecking on the recursive call.
+    2. =binop=: it calls itself recursively twice and typechecks the results.
+                Furthermore, if the operation is division, it also performs a
+                not eqaul zero check. The environment is unchanged.
+    3. =ifte=: it recursively calls itself thrice - once for the predicate, once
+               for the then clause and once for the else clause. It performs
+               typechecking on the predicate and evaluates the appropriate
+               branch. The environment is unchanged.
+    4. =num=, =bool=: it simple unwraps and returns the value
+`   5. =assume=: it recursively calls itself with an extended environment but
+                 but unchanged expression. New bindings are added using =map=ing
+                 over the bindings to get list of symbols and list of values.
+    6. =id-ref=: it looks up the environment for the passed symbol
+
 #+NAME: eval-ast
 #+BEGIN_SRC racket
 (define eval-ast
