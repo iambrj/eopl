@@ -189,12 +189,33 @@
 #+END_SRC
 
 
-* Parser (You need to implement this)
+* Parser
   A parser parses an expression in concrete syntax according
   to a given grammar.
 
 
-  You need to complete this definition.
+It uses three helper functions
+1. =op->ast=, which takes an operator symbol and returns the corresponding
+AST constructor
+2.  =is-binop?=, which takes a symbol and returns a boolean value indicating
+whether or not the symbol is a binary operator.
+3. =is-unaryop?=, which takes a symbol and returns a boolean value indicating
+whether or not the symbol is a unary operator.
+
+Now we are in a position to describe =parse=. Given an expression, parse
+produces the corresponding AST. It does this by a =cond= on the expression
+1. If the passed expression is just a number or a boolean, it is wrapped into
+the appropriate constructor and returned.
+2. If the entire expression is just a symbol, it is wrapped into an =id-ref= so
+that it may be looked up into the environment during evaluation.
+3. If the expression is an if-then-else construct, parse is called recursively
+for each field of if-then-else.
+4. If the expression is unary operator, parse is called recursively on the
+second part of the expression.
+5. If the expression is a binary operator, parse is called recursively on the
+second and third parts of the expression and the appropriate constructor for
+the binary operator is fetched using =op-ast=.
+If none of the above work, it throws an error.
 
 #+NAME: parse
 #+BEGIN_SRC racket
@@ -225,8 +246,8 @@
     ['! #t]
     [_ #f]
     ))
+
 ;;; parse :: any/c -> ast?  Raises exception exn:parse-error?
-;;; Fill in the function parse here
 (define (parse exp)
     (cond
       [(number? exp) (num exp)]
@@ -410,7 +431,7 @@ The function =raise-parse-error=, given below raises an
                          (let ([idx (index-of syms x)])
                            (if idx
                                (list-ref vals idx)
-                               (lookup-env outer x)))]))) ;; your solution here.
+                               (lookup-env outer x)))])))
 #+END_SRC
 
 *** Lookup Error
