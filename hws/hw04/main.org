@@ -579,10 +579,10 @@ i.e., actual functions that operate on expressible values.
                for the then clause and once for the else clause. It performs
                typechecking on the predicate and evaluates the appropriate
                branch. The environment is unchanged.
-    4. =num=, =bool=: it simple unwraps and returns the value
-`   5. =assume=: it recursively calls itself with an extended environment but
+    4. =num=, =bool=: it simply unwraps and returns the value
+    5. =assume=: it recursively calls itself with an extended environment but
                  but unchanged expression. New bindings are added using =map=ing
-                 over the bindings to get list of symbols and list of values.
+                 over the bindings to get list of symbols and list of values
     6. =id-ref=: it looks up the environment for the passed symbol
 
 #+NAME: eval-ast
