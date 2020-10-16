@@ -188,7 +188,7 @@ parsing and evaluation errors.
                               (function '(x) (id-ref 'x))))
               
               (test-case "No Params"
-                (check-equl? (parse const-fn)
+                (check-equal? (parse const-fn)
                               (function '() (num 1))))
               
               (test-case "Two Params"
