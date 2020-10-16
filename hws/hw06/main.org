@@ -119,11 +119,19 @@ parsing and evaluation errors.
 
 
 
-* Parser (YOU NEED TO IMPLEMENT THIS)
+* Parser
 
-  You need to implement the =parse= function that converts the
-  concrete syntax of the functional lanauge into the ast
-  representation.
+  Only difference from hw04 is function abstraction, =function= and function
+  application =app=. Therefore, we shall only talk about those here. The first
+  element is lexically bounded to =head= using =let=. Next, we have a =cond=
+  for various values =head= can take.
+  1. Function abstraction - when =head= is =function=, the parser has
+  encountered a function abstraction. Therefore, it parses the second part of
+  the expression for formal parameters and the last part for the function body.
+  2. Function application - the parser defaults to application when all other
+  parsing predicates fail. To parse an application, it parses the head as the
+  function declaration and rest of the expressions as arguments (using a =map=
+  to, of course).
   
 #+NAME: parser
 #+BEGIN_SRC racket
@@ -307,7 +315,7 @@ parsing and evaluation errors.
 #+END_SRC
 
 
-* Operators as Procedures (YOU NEED TO IMPLEMENT THIS)
+* Operators as Procedures
 
   In the lexical language we defined operators as separate constructs.
   In this language we will use the new =prim-proc= construct to
@@ -340,7 +348,6 @@ parsing and evaluation errors.
   
 #+NAME: prim-proc
 #+BEGIN_SRC racket
-;;; implement all procedures in the list
 (define (+p x y) (+ x y))
 (define (-p x y) (- x y))
 (define (*p x y) (* x y))
@@ -461,11 +468,31 @@ parsing and evaluation errors.
 #+END_SRC
 
 
-* Interpreter (YOU NEED TO IMPLEMENT THIS)
+* Interpreter
 
   The =eval-ast= function takes an =ast= and the corresponding =env=
   (that contains bindings for evaluation of the =ast=) and returns the
   evaluated expressible value.
+
+  Once again, we only describe function abstraction and application since rest
+  of the evaluator is same as hw04. But, we use the following helper functions
+  1. =get-formals=: This takes a closure and returns the list of formal
+  parameters
+  2. =get-body=: This takes a closure and returns the body
+  3. =get-bind-id=: This takes a binding and returns the identifier of the
+  binding
+  4. =get-bind-ast=: This takes a binding and returns the ast of the binding
+
+  Now, we talk about the two cases
+  1. Abstraction: In this case, we return a closure using the values passed by
+  the parser
+  2. Application: In this case, we first evaluate the =rator= and =rand= of the
+  application and the check if =rator= is a procedure (for instance, it may be
+  a primitive procedure). If so, we =apply= the =rator= to the =rands=.
+  Otherwise, we the evaluator has encountered a closure. In this case we make a
+  recursive call by extending the environment by binding the formal parameters
+  of the function (fetched by a call to =get-formals=) to the passed =rands=
+  on the body (fetched by a call to =get-body=).
   
 #+NAME: eval-ast
 #+BEGIN_SRC racket
