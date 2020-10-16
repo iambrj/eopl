@@ -14,11 +14,34 @@
    (body ast?)]
   [app (rator ast?) (rands (list-of ast?))]
   [id-ref (sym id?)]
-  [prim (sym id?)]
   [assume (binds  (list-of bind?)) (body ast?)])
 
 (define-datatype bind bind?
   [make-bind (b-id id?) (b-ast ast?)])
+
+(define-datatype proc proc?
+  [prim-proc
+    ;; prim refers to a scheme procedure
+    (prim procedure?)
+    ;; sig is the signature
+    (sig (list-of procedure?))] 
+  [closure
+    (formals (list-of symbol?))
+    (body ast?)
+    (env env?)])
+
+;;; prim? : proc? -> boolean?
+(define prim-proc?
+  (lambda (p)
+    (cases proc p
+      [prim-proc (prim sig) #t]
+      [else #f])))
+
+(define closure? 
+  (lambda (p)
+    (cases proc p
+      [prim-proc (prim sig) #f]
+      [else #t])))
 
 ;;; bind-id : bind? -> id?
 (define bind-id
@@ -96,54 +119,6 @@
    (list +p -p *p /p <p <=p eq?p 0?p !p)
    (empty-env)))
 
-(define (primitive-ops)
-  (list
-   `(+ . ,+p)
-   `(- . ,-p)
-   `(* . ,*p)
-   `(/ . ,/p)
-   `(< . ,<p)
-   `(<= . ,<=p)
-   `(eq? . ,eq?p)
-   `(0? . ,0?p)
-   `(! . ,!p)))
-
-;;; parse :: any/c -> ast?  Raises exception exn?
-;;; Fill in the function parse here
-; (define (parse expr)
-;   (let ([len (length expr)])
-;     (cond
-;       [(= len 1)
-;        (cond
-;          [(number?  (first expr)) (num    (first expr))]
-;          [(boolean? (first expr)) (bool   (first expr))]
-;          [(symbol?  (first expr)) (id-ref (first expr))]
-;          [else (error "Parser error")])]
-;       [(= len 4)
-;        (and
-;          (equal? (first expr) 'ifte)
-;          (ifte (parse (second expr))
-;                (parse (third expr))
-;                (parse (fourth expr))))]
-;       [(= len 3)
-;        (cond
-;          [(equal? (first expr) 'assume)
-;           (assume (map
-;                     (lambda (binding)
-;                       (make-bind (first binding) (parse (second binding))))
-;                     (second expr))
-;                   (parse (third expr)))]
-;          [(equal? (first expr) 'function)
-;           (function (second expr) (parse (third expr)))]
-;          [(assoc (first expr) primitive-ops) ()]
-;          [else (error "Parser error")])]
-;       [(= len 2)
-;        (app
-;          (parse (first expr))
-;          (parse (second expr)))]
-;       [else (error "Parser error")])))
-
-
 (define (parse expr)
   (cond
     [(empty? expr) (error "Empty expression")]
@@ -172,11 +147,62 @@
                    (lambda (x) (parse x))
                    (rest expr))))]))]))
 
+(define get-formals
+  (lambda (c)
+    (cases proc c
+      [closure (formals body env) formals]
+      [else (error "Non-closure parameter")])))
+
+(define get-body
+  (lambda (c)
+    (cases proc c
+     [closure (formals body env) body]
+     [else (error "Non-closure parameter")])))
+
+(define get-bind-id
+  (lambda (b)
+    (cases bind b
+      [make-bind (b-id b-ast) b-id])))
+
+(define get-bind-ast
+  (lambda (b)
+    (cases bind b
+      [make-bind (b-id b-ast) b-ast])))
+
+(define eval-ast
+  (lambda (a e)
+    (cases ast a
+           [num (n) n]
+           [bool (b) b]
+           [id-ref (id) (lookup-env e id)]
+           [ifte (test then-clause else-clause)
+             (if
+               (eval-ast test e)
+               (eval-ast then-clause e)
+               (eval-ast else-clause e))]
+           [assume (binds body)
+             (eval-ast
+               body
+               (extended-env
+                 (map (lambda (x) (get-bind-id x)) binds)
+                 (map (lambda (x) (eval-ast (get-bind-ast x) e)) binds)
+                 e))]
+           [function (formals body) (closure formals body e)]
+           [app (rator rands)
+                (let ([rator (eval-ast rator e)]
+                      [rands (map (lambda (x) (eval-ast x e)) rands)])
+                  (if (procedure? rator)
+                    (apply rator rands)
+                    (eval-ast
+                      (get-body rator)
+                      (extended-env (get-formals rator) rands e))))]
+           )))
+
 (define iden-fn '(function (x) x))
 (define apply-iden-fn '((function (x) x) 10))
 
-(define const-fn '(function () (1)))
-(define apply-const-fn '((function () (1))))
+(define const-fn '(function () 1))
+(define apply-const-fn '((function () 1)))
 
 (define sum-fn '(function (p q) (+ p q)))
 (define apply-sum-fn '((function (p q) (+ p q)) 10 30))
@@ -184,3 +210,5 @@
 (define fn-with-assume '(assume ([sub-2 (function (x) (- x 2))]) (sub-2 10)))
 
 (define fn-override-binding '(assume ([a 10])((function (a b) (+ a b)) 30 40)))
+
+(eval-ast (app (id-ref '+) (list (num 1) (num 2))) *init-env*)
