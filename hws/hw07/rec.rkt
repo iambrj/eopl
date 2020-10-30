@@ -99,6 +99,34 @@
                  (map
                    (lambda (x) (parse x))
                    (rest expr))))]))]))
+
+(define-datatype proc proc?
+  [prim-proc
+    ;; prim refers to a scheme procedure
+    (prim procedure?)
+    ;; sig is the signature
+    (sig (list-of procedure?))] 
+  [closure
+    (formals (list-of symbol?))
+    (body ast?)
+    (env env?)])
+
+;;; prim? : proc? -> boolean?
+(define prim-proc?
+  (lambda (p)
+    (cases proc p
+      [prim-proc (prim sig) #t]
+      [else #f])))
+
+(define closure? 
+  (lambda (p)
+    (cases proc p
+      [prim-proc (prim sig) #f]
+      [else #t])))
+
+(define denotable-value?
+  (or/c number? boolean? proc?))
+
 (define-datatype env env?
   [empty-env]
   [extended-env
@@ -116,7 +144,6 @@
     (cases env e
       [empty-env () #t]
       [else #f])))
-
 ;;; extended-env? : env? -> boolean?
 (define extended-env?
   (lambda (e)
@@ -131,6 +158,16 @@
       [extended-rec-env (fsyms lformals bodies outer-env) #t]
       [else #f])))
 
+(define +p (prim-proc (lambda (x y) (+ x y)) (list number? number? number?)))
+(define -p (prim-proc (lambda (x y) (- x y)) (list number? number? number?)))
+(define *p (prim-proc (lambda (x y) (* x y)) (list number? number? number?)))
+(define /p (prim-proc (lambda (x y) (/ x y)) (list number? number? number?)))
+(define <p (prim-proc (lambda (x y) (< x y)) (list number? number? number?)))
+(define <=p (prim-proc (lambda (x y) (<= x y)) (list boolean? number? number?)))
+(define eq?p (prim-proc (lambda (x y) (eq? x y)) (list boolean? number? number?)))
+(define 0?p (prim-proc (lambda (x) (= 0 x)) (list boolean? number?)))
+(define !p (prim-proc (lambda (x) (not x)) (list boolean? number?)))
+
 (define *init-env*
   (extended-env
    '(+ - * / < <= eq? 0? !)
@@ -139,34 +176,108 @@
 
 (define lookup-env
   (lambda (e x) 
-    #f))
+    (cases env e
+           [extended-env (syms vals outer)
+                         (let ([idx (index-of syms x)])
+                           (if idx
+                               (list-ref vals idx)
+                               (lookup-env outer x)))]
+           [extended-rec-env (fsyms lformals bodies outer)
+                         (let ([idx (index-of fsyms x)])
+                           (if idx
+                               (closure (list-ref lformals idx) (list-ref bodies idx) e)
+                               (lookup-env outer x)))]
+           [empty-env (error "Empty environment")])))
 
-; (define eval-ast
-;   (lambda (a e)
-;     (cases ast a
-;            [num (n) n]
-;            [bool (b) b]
-;            [id-ref (id) (lookup-env e id)]
-;            [ifte (test then-clause else-clause)
-;              (if
-;                (eval-ast test e)
-;                (eval-ast then-clause e)
-;                (eval-ast else-clause e))]
-;            [assume (binds body)
-;              (eval-ast
-;                body
-;                (extended-env
-;                  (map (lambda (x) (get-bind-id x)) binds)
-;                  (map (lambda (x) (eval-ast (get-bind-ast x) e)) binds)
-;                  e))]
-;            [function (formals body) (closure formals body e)]
-;            [app (rator rands)
-;                 (let ([rator (eval-ast rator e)]
-;                       [rands (map (lambda (x) (eval-ast x e)) rands)])
-;                   (if (procedure? rator)
-;                     (apply rator rands)
-;                     (eval-ast
-;                       (get-body rator)
-;                       (extended-env (get-formals rator) rands e))))]
-;            )))
-(parse '(recursive ([f1 (x) (< 5 x)])(ifte (f1 2) 0 10)))
+(define e1
+  (extended-env '(x y z) '(1 2 3) (empty-env)))
+
+(define e2
+  (extended-env '(w x) '(5 6) e1))
+
+(define even-body
+  (ifte
+    (app (id-ref '0?) (list (id-ref 'n)))
+    (bool #t)
+    (app
+      (id-ref 'odd?)
+      (list (app
+              (id-ref '-)
+              (list (id-ref 'n) (num 1)))))))
+
+(define odd-body
+  (ifte (app (id-ref '0?) (list (id-ref 'n)))
+    (bool #f)
+    (app (id-ref 'even?)
+      (list (app (id-ref '-) (list (id-ref 'n) (num 1)))))))
+
+(define e3
+  (extended-rec-env
+    '(even? odd?)
+    '((n) (n))
+    (list even-body odd-body)
+    e2))
+
+(define get-bind-id
+  (lambda (b)
+    (cases bind b
+      [make-bind (b-id b-ast) b-id])))
+
+(define get-bind-ast
+  (lambda (b)
+    (cases bind b
+      [make-bind (b-id b-ast) b-ast])))
+
+(define get-body
+  (lambda (c)
+    (cases proc c
+     [closure (formals body env) body]
+     [else (error "Non-closure parameter")])))
+
+(define get-formals
+  (lambda (c)
+    (cases proc c
+      [closure (formals body env) formals]
+      [else (error "Non-closure parameter")])))
+
+(define eval-ast
+  (lambda (a e)
+    ;(printf "AST: ")
+    ;(print a)
+    ;(printf "\n")
+    ;(printf "Env: ")
+    ;(print e)
+    ;(printf "\n")
+    (cases ast a
+      [num (n) n]
+      [bool (b) b]
+      [id-ref (id) (lookup-env e id)]
+      [ifte (test then-clause else-clause)
+        (if
+          (eval-ast test e)
+          (eval-ast then-clause e)
+          (eval-ast else-clause e))]
+      [assume (binds body)
+        (eval-ast
+          body
+          (extended-env
+            (map (lambda (x) (get-bind-id x)) binds)
+            (map (lambda (x) (eval-ast (get-bind-ast x) e)) binds)
+            e))]
+      [function (formals body) (closure formals body e)]
+      [app (rator rands)
+           (let ([rator (eval-ast rator e)]
+                 [rands (map (lambda (x) (eval-ast x e)) rands)])
+             (cases proc rator
+               [prim-proc (prim sig)
+                 (apply prim rands)] 
+               [closure (formals body env)
+                 (eval-ast body (extended-env formals rands e))]))]
+      [recursive (fbinds body)
+                 (eval-ast
+                   body
+                   (extended-rec-env
+                     (map (lambda (f) (fbind-id f)) fbinds)
+                     (map (lambda (f) (fbind-formals f)) fbinds)
+                     (map (lambda (f) (fbind-body f)) fbinds)
+                     e))])))
