@@ -251,9 +251,7 @@ call to =parse= itself for the last =<exp>= of =recursive= grammar.
         [else
           (let ([rator (parse head)])
             (app rator 
-                 (map
-                   (lambda (x) (parse x))
-                   (rest expr))))]))]))
+                 (map parse (rest expr))))]))]))
 #+END_SRC
     
 
@@ -586,7 +584,7 @@ use =extended-rec-env= to bind function names, argument lists and and bodies.
         (eval-ast
           body
           (extended-env
-            (map (lambda (x) (get-bind-id x)) binds)
+            (map get-bind-id binds)
             (map (lambda (x) (eval-ast (get-bind-ast x) e)) binds)
             e))]
       [function (formals body) (closure formals body e)]
@@ -602,9 +600,9 @@ use =extended-rec-env= to bind function names, argument lists and and bodies.
                  (eval-ast
                    body
                    (extended-rec-env
-                     (map (lambda (f) (fbind-id f)) fbinds)
-                     (map (lambda (f) (fbind-formals f)) fbinds)
-                     (map (lambda (f) (fbind-body f)) fbinds)
+                     (map fbind-id fbinds)
+                     (map fbind-formals fbinds)
+                     (map fbind-body fbinds)
                      e))])))
 
 #+END_SRC
