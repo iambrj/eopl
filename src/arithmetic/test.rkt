@@ -46,7 +46,7 @@
     (test-case "if-type-mismatch"  (check-exn exn:exec-type-mismatch?
                (lambda () (eval-ast (ifte (num 42) (num 10) (num 20))))))))
 
-(define run-all-tests 
+(define run-all-tests
   (lambda ()
     (run-tests ts-parsing)
     (run-tests ts-evaluation)

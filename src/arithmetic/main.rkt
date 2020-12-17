@@ -23,7 +23,7 @@
 
 (struct exn:parse-error exn:fail ())
 
-(define raise-parse-error 
+(define raise-parse-error
  (lambda (err-msg)
    (raise (exn:parse-error err-msg (current-continuation-marks)))))
 
@@ -48,7 +48,7 @@
   (lambda ()
     (raise (exn:exec-type-mismatch "type mismatch!" (current-continuation-marks)))))
 
-;;; runtime-check :: [expressible? -> boolean?], exn? -> [expressible? -> expressible? || exn?] 
+;;; runtime-check :: [expressible? -> boolean?], exn? -> [expressible? -> expressible? || exn?]
 (define runtime-check
   (lambda (pred? exn)
     (lambda (v)
@@ -59,7 +59,7 @@
 (define typecheck-num
   (runtime-check number?  raise-exec-type-mismatch))
 
-(define typecheck-bool 
+(define typecheck-bool
   (runtime-check boolean? raise-exec-type-mismatch))
 
 (define check-non-zero
@@ -90,12 +90,12 @@
       (bool (b) b))))
 
 (define ts-numop-incorrect-param-rand1
-  (test-suite 
+  (test-suite
    "wrongly typed rand1 parameters"
    (for/list ([numerical-op '(add sub mul div lt? eq?)])
      (test-case (string-append (symbol->string numerical-op) "-type-mismatch-rand1")
        (check-exn exn:exec-type-mismatch?
-                  (lambda () 
+                  (lambda ()
                     (eval-ast (binop numerical-op
                                      (binop 'lt? (num 10) (num 20)) ; boolean
                                      (num 10)))))))))
@@ -106,7 +106,7 @@
    (for/list ([numerical-op '(add sub mul div)])
      (test-case (string-append (symbol->string numerical-op) "-type-mismatch-rand1")
        (check-exn exn:exec-type-mismatch?
-                  (lambda () 
+                  (lambda ()
                     (eval-ast (binop numerical-op (num 10)
                                      (binop 'lt? (num 10) (num 20))))))))))
 
