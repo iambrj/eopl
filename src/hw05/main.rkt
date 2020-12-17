@@ -2,12 +2,13 @@
 
 (define-syntax colist
   (syntax-rules ()
-    [(colist sym terms ...) 
+    [(colist sym terms ...)
      (lambda () (list sym terms ...))]))
 
 ;;; unroll :: term? -> term?
 (define (unroll t)
   (if (procedure? t) (t) t))
+
 ;;; hd :: term? -> symbol?
 (define (hd t)
   (car (unroll t)))
@@ -21,6 +22,7 @@
   (raise (exn:type-error
           "Invalid Arguments"
           (current-continuation-marks))))
+
 ;;; term? -> term? -> set? -> boolean?
 (define (bisimilar?-aux t1 t2 asked)
   (cond
