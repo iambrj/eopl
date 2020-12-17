@@ -32,14 +32,14 @@
   (test-suite "Parsing assume construct"
 
     (test-case "valid : single binding"
-      (check-equal? 
+      (check-equal?
        (assume
         (list (make-bind 'x (num 30)))
         (binop 'add (num 100) (id-ref 'x)))
        (parse '(assume ([x 30])(+ 100 x)))))
 
     (test-case "valid : operation in binding"
-      (check-equal? 
+      (check-equal?
        (assume
         (list (make-bind 'x (binop 'add (num 2) (num 4))))
         (binop 'add (num 100) (id-ref 'x)))
@@ -60,63 +60,63 @@
 (define ts-evaluation
   (test-suite
     "evaluation"
-    (test-case "num" 
-               (check-equal? 10 
+    (test-case "num"
+               (check-equal? 10
                              (eval-ast (num 10) (empty-env))))
-    (test-case "id-ref" 
+    (test-case "id-ref"
                (check-equal? 3
-                             (eval-ast (id-ref 'x) 
+                             (eval-ast (id-ref 'x)
                              (extended-env '(x v) (list 3 5) (empty-env)))))
-    (test-case "add" 
-               (check-equal? 30 
+    (test-case "add"
+               (check-equal? 30
                              (eval-ast (binop 'add (num 10) (num 20)) (empty-env))))
-    (test-case "sub" 
-               (check-equal? -10 
+    (test-case "sub"
+               (check-equal? -10
                              (eval-ast (binop 'sub (num 10) (num 20)) (empty-env))))
-    (test-case "mul" 
-               (check-equal? 200 
+    (test-case "mul"
+               (check-equal? 200
                              (eval-ast (binop 'mul (num 10) (num 20)) (empty-env))))
-    (test-case "lt" 
-               (check-equal? #t 
+    (test-case "lt"
+               (check-equal? #t
                              (eval-ast (binop 'lt? (num 10) (num 20)) (empty-env))))
-    (test-case "eq" 
-               (check-equal? #t 
+    (test-case "eq"
+               (check-equal? #t
                              (eval-ast (binop 'eq? (num 10) (num 10)) (empty-env))))
-    (test-case "div-success" 
+    (test-case "div-success"
                (check-equal? 2
                              (eval-ast (binop 'div (num 20) (num 10)) (empty-env))))
     (test-case "div-failure"
                (check-exn exn:exec-div-by-zero?
-                          (lambda () 
+                          (lambda ()
                             (eval-ast (binop 'div (num 20) (num 0)) (empty-env)) 2)))
-    (test-case "bool-t" 
+    (test-case "bool-t"
                (check-equal? #t
                              (eval-ast (bool #t) (empty-env))))
-    (test-case "bool-f" 
-               (check-equal? #f 
+    (test-case "bool-f"
+               (check-equal? #f
                              (eval-ast (bool #f) (empty-env))))
-    (test-case "if-true" 
-               (check-equal? 10 
-                             (eval-ast 
+    (test-case "if-true"
+               (check-equal? 10
+                             (eval-ast
                                (ifte (bool #t) (num 10) (num 20)) (empty-env))))
-    (test-case "if-false" 
+    (test-case "if-false"
                (check-equal? 20
-                             (eval-ast 
+                             (eval-ast
                                (ifte (bool #f) (num 10) (num 20)) (empty-env))))
-    (test-case "if-type-mismatch"  
+    (test-case "if-type-mismatch"
                (check-exn exn:exec-type-mismatch?
-                          (lambda () 
-                            (eval-ast 
+                          (lambda ()
+                            (eval-ast
                               (ifte (num 42) (num 10) (num 20)) (empty-env)))))
     (test-case "assume : single binding : empty-env at top level : no reference"
                (check-equal? 50
-                             (eval-ast 
+                             (eval-ast
                                (assume (list (make-bind 'x (num 100)))
                                        (binop 'add (num 2) (num 48)))
                                (empty-env))))
     (test-case "assume : single binding : empty-env at top level : single reference"
                (check-equal? 150
-                             (eval-ast 
+                             (eval-ast
                                (assume (list (make-bind 'x (num 100)))
                                        (binop 'add (num 50) (id-ref 'x)))
                                (empty-env))))))
@@ -124,13 +124,13 @@
 (define test-lookup-env
   (test-suite "Lookup Env"
     (test-case "Binding is present : Lookup returns the ast"
-      (let 
+      (let
         ((mock-env (extended-env (list 'x) (list 10) (empty-env))))
         (check-equal? 10
                       (lookup-env mock-env 'x))))
 
     (test-case "Binding not found : Lookup throws error"
-      (let 
+      (let
         ((mock-env (extended-env (list 'x) (list 10) (empty-env))))
         (check-exn exn:lookup-error?
                    (lambda ()
@@ -142,7 +142,7 @@
         (check-equal? 10
                      (lookup-env mock-env 'y))))))
 
-(define run-all-tests 
+(define run-all-tests
   (lambda ()
     (run-tests ts-parsing)
     (run-tests test-parse-assume)
