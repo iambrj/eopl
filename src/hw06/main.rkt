@@ -29,7 +29,6 @@
       [make-bind (b-id b-ast) b-ast])))
 (define env? procedure?)
 
-
 ;;; lookup-env: [env?  symbol?] -> any/c
 ;;; lookup-env: throws "unbound identifier" error
 (define lookup-env
@@ -54,8 +53,7 @@
 
 ;;; Returns the loction of the element in a list, -1 if the
 ;;; element is absent.
-
-;;; list-index : [(listof any/c)  any/c] -> 
+;;; list-index : [(listof any/c)  any/c] ->
 (define list-index
   (lambda (ls a)
     (letrec ([loop
@@ -65,6 +63,7 @@
                    [(eq? (first ls) a) ans]
                    [#t (loop (rest ls) (+ 1 ans))]))])
       (loop ls 0))))
+
 (define *keywords*
   '(ifte function assume))
 
@@ -99,7 +98,7 @@
          (function (second expr) (parse (third expr)))]
         [else
           (let ([rator (parse head)])
-            (app rator 
+            (app rator
                  (map
                    (lambda (x) (parse x))
                    (rest expr))))]))]))
@@ -109,7 +108,7 @@
     ;; prim refers to a scheme procedure
     (prim procedure?)
     ;; sig is the signature
-    (sig (list-of procedure?))] 
+    (sig (list-of procedure?))]
   [closure
     (formals (list-of symbol?))
     (body ast?)
@@ -122,14 +121,16 @@
       [prim-proc (prim sig) #t]
       [else #f])))
 
-(define closure? 
+(define closure?
   (lambda (p)
     (cases proc p
       [prim-proc (prim sig) #f]
       [else #t])))
+
 ;;; expressible-value? : any/c -> boolean?
 (define expressible-value?
   (or/c number? boolean? proc?))
+
 ;;; denotable-value? :any/c -> boolean?
 (define denotable-value?
   (or/c number? boolean? proc?))
@@ -142,11 +143,13 @@
 (define (eq?p x y) (eq? x y))
 (define (0?p x) (= 0 x))
 (define (!p x) (not x))
+
 (define *init-env*
   (extended-env
    '(+ - * / < <= eq? 0? !)
    (list +p -p *p /p <p <=p eq?p 0?p !p)
    (empty-env)))
+
 (define get-formals
   (lambda (c)
     (cases proc c
@@ -195,9 +198,6 @@
                     (apply rator rands)
                     (eval-ast
                       (get-body rator)
-                      (extended-env (get-formals rator) rands e))))]
-           )))
-
-
+                      (extended-env (get-formals rator) rands e))))])))
 
 (provide (all-defined-out))

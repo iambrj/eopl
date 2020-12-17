@@ -4,8 +4,7 @@
 (require rackunit)
 (require racket/match)
 (require rackunit/text-ui)
-(require "main-tang.rkt")
-
+(require "main.rkt")
 
 (define iden-fn '(function (x) x))
 (define apply-iden-fn '((function (x) x) 10))
@@ -20,18 +19,16 @@
 
 (define fn-override-binding '(assume ([a 10])((function (a b) (+ a b)) 30 40)))
 
-
-
 (define test-function-parsing
   (test-suite "Function Parsing"
               (test-case "Identity Function"
                 (check-equal? (parse iden-fn)
                               (function '(x) (id-ref 'x))))
-              
+
               (test-case "No Params"
-                (check-equl? (parse const-fn)
+                (check-equal? (parse const-fn)
                               (function '() (num 1))))
-              
+
               (test-case "Two Params"
                 (check-equal? (parse sum-fn)
                               (function '(p q)
@@ -39,18 +36,19 @@
                                              (list (id-ref 'p) (id-ref 'q))))))
               (test-case "Parse Error - function"
                (check-exn exn:fail?
-                          (lambda () 
+                          (lambda ()
                             (parse '(function (a))))))
 
               (test-case "Parse Error - assume"
                (check-exn exn:fail?
-                          (lambda () 
+                          (lambda ()
                             (parse '(assume)))))))
+
 (define test-operator-functions
   (test-suite "Operator Function"
               (test-case "Add"
                           (check-equal? (eval-ast (app (id-ref '+) (list (num 10) (num 10))) *init-env*)
-                                        20))                        
+                                        20))
               (test-case "Sub"
                           (check-equal? (eval-ast (app (id-ref '-) (list (num 40) (num 10))) *init-env*)
                                         30))
@@ -84,6 +82,7 @@
               (test-case "eq?p - #f"
                           (check-equal? (eval-ast (app (id-ref 'eq?) (list (num 4) (num 1))) *init-env*)
                                         #f))))
+
 (define test-function-evaluation
   (test-suite "Function Evaluation"
               (test-case "Identity Function"
@@ -103,17 +102,16 @@
                               70))
               (test-case "Eval Error"
                (check-exn exn:fail?
-                          (lambda () 
+                          (lambda ()
                             (eval-ast (app (id-ref '/) (list (num 20) (num 0))) *init-env*))))
               (test-case "Eval Error - prim op - incorrect value"
                (check-exn exn:fail?
-                          (lambda () 
+                          (lambda ()
                             (eval-ast (app +p (list (bool #t) (num 0))) *init-env*))))
               (test-case "Eval Error - prim op - incorrect # of params"
                (check-exn exn:fail?
-                          (lambda () 
+                          (lambda ()
                             (eval-ast (app +p (list (num 0))) *init-env*))))))
-
 
 (define test-function
   (test-suite "Function Tests"
@@ -121,11 +119,9 @@
               test-function-evaluation
               test-operator-functions))
 
-
-(define run-all-tests 
+(define run-all-tests
   (lambda ()
     (run-tests test-function)))
-
 
 (module+ test
   (run-all-tests))
