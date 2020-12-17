@@ -1,9 +1,15 @@
-# POPL20
-This repository contains Bharathi Ramana Joshi's (Roll number - 2019121006) work
-for the course *Principles of Programming Languages*, 2020 at IIIT Hyderabad.
+# Essentials of Programming Languages
 
-## Directory layout
+Racket implementations of the interpreters discussed in the textbook *Essentials
+of Programming Languages*
 
-|     Path     |       Contents       |
-|     ----     |       --------       |
-|      /hw     | Homework assignments |
+# Contributing
+
+See [issues](https://github.com/iambrj/eopl/issues). In particular, I would
+appreciate it if someone is willing to rewrite the following using [Racket's
+`match`](https://docs.racket-lang.org/reference/match.html)
+
+1. Arithmetic
+2. Lexical
+3. Functional
+4. Recursive
