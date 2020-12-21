@@ -28,12 +28,12 @@
     [(list 'quote expr) expr]
     [(? symbol? expr) (env expr)]
     [(list 'let (list bindings ...) body)
-      (cps-letrec body (foldr (lambda (binding env)
-                                (ext-env (first binding)
-                                         (cps-letrec (second binding) env)
-                                         env))
-                              env
-                              bindings))]
+     (cps-letrec body (foldr (lambda (binding env)
+                               (ext-env (first binding)
+                                        (cps-letrec (second binding) env)
+                                        env))
+                             env
+                             bindings))]
     [`(lambda ,(list args ...) ,body)
       (lambda host-args
         (cps-letrec body

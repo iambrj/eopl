@@ -57,7 +57,11 @@
       (check-equal? (cps-letrec '(let ([x (quote x)]) ((lambda (y) x) 5))) (quote x)))
     (test-case
       "let binding in a thunk"
-      (check-equal? (cps-letrec '(let ([x 3]) ((lambda () x)))) 3))))
+      (check-equal? (cps-letrec '(let ([x 3]) ((lambda () x)))) 3))
+    (test-case
+      "let binding a lambda expression"
+      (check-equal? (cps-letrec '(let ([identity (lambda (x) x)]) (identity 5)))
+                    5))))
 
 (run-tests value-tests 'verbose)
 (run-tests expression-tests 'verbose)
