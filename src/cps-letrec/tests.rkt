@@ -43,6 +43,23 @@
       "Thunk evaluation"
       (check-equal? (cps-letrec '((lambda () (* 5 (/ 10 2))))) 25))))
 
+(define let-tests
+  (test-suite
+    "let binding tests"
+    (test-case
+      "let binding a number"
+      (check-equal? (cps-letrec '(let ([x 5]) x)) 5))
+    (test-case
+      "let binding a symbol"
+      (check-equal? (cps-letrec '(let ([x (quote x)]) x)) (quote x)))
+    (test-case
+      "let binding infiltrating a lambda abstraction"
+      (check-equal? (cps-letrec '(let ([x (quote x)]) ((lambda (y) x) 5))) (quote x)))
+    (test-case
+      "let binding in a thunk"
+      (check-equal? (cps-letrec '(let ([x 3]) ((lambda () x)))) 3))))
+
 (run-tests value-tests 'verbose)
 (run-tests expression-tests 'verbose)
 (run-tests lambda-tests 'verbose)
+(run-tests let-tests 'verbose)
