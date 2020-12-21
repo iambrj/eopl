@@ -1,4 +1,5 @@
 #lang racket
+(provide cps-letrec)
 
 (define (ext-env u v env)
   (lambda (x)
@@ -19,6 +20,7 @@
             ,(lambda (u v) (* u v))
             ,(lambda (u v) (/ u v)))))
 
+; Leads to dirty behaviour when let binding quote
 (define (cps-letrec expr [env init-env])
   (match expr
     [(? number? expr) expr]
