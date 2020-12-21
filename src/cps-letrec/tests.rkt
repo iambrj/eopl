@@ -63,7 +63,44 @@
       (check-equal? (cps-letrec '(let ([identity (lambda (x) x)]) (identity 5)))
                     5))))
 
+(define letrec-tests
+  (test-suite
+    "letrec binding tests"
+    (test-case
+      "letrec double"
+      (check-equal? (cps-letrec '(letrec ([double (lambda (x)
+                                                    (if (zero? x)
+                                                      0
+                                                      (+ 2 (double (- x 1)))))])
+                                   (double 3)))
+                    6))
+    (test-case
+      "letrec mutual recursion 1"
+      (check-equal? (cps-letrec '(letrec ([even? (lambda (x) (if (zero? x) #t (odd? (- x 1))))]
+                                          [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
+                                   (even? 4)))
+                    #t))
+    (test-case
+      "letrec mutual recursion 2"
+      (check-equal? (cps-letrec '(letrec ([even? (lambda (x) (if (zero? x) #t (not (- x 1))))]
+                                          [odd? (lambda (x) (if (zero? x) #f (not (- x 1))))])
+                                   (odd? 4)))
+                    #f))
+    (test-case
+      "letrec mutual recursion 3"
+      (check-equal? (cps-letrec '(letrec ([even? (lambda (x) (if (zero? x) #t (odd? (- x 1))))]
+                                          [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
+                                   (even? 5)))
+                    #f))
+    (test-case
+      "letrec mutual recursion 4"
+      (check-equal? (cps-letrec '(letrec ([even? (lambda (x) (if (zero? x) #t (odd? (- x 1))))]
+                                          [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
+                                   (odd? 5)))
+                    #t))))
+
 (run-tests value-tests 'verbose)
 (run-tests expression-tests 'verbose)
 (run-tests lambda-tests 'verbose)
 (run-tests let-tests 'verbose)
+(run-tests letrec-tests 'verbose)

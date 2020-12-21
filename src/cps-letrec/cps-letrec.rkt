@@ -7,11 +7,13 @@
       v
       (env x))))
 
-(define (rec-ext-env u v env)
+; pass the entire list?
+(define (rec-ext-env bindings env)
   (lambda (x)
-    (if (eq? x u)
-      (cps-letrec v (rec-ext-env u v env))
-      (env x))))
+    (let ([p (assoc x bindings)])
+      (if p
+        (cps-letrec (second p) (rec-ext-env bindings env))
+        (env x)))))
 
 (define empty-env
   (lambda (x)
@@ -48,12 +50,7 @@
                              env
                              bindings))]
     [(list 'letrec (list bindings ...) body)
-     (cps-letrec body (foldr (lambda (binding env)
-                               (rec-ext-env (first binding)
-                                            (second binding)
-                                            env))
-                             env
-                             bindings))]
+     (cps-letrec body (rec-ext-env bindings env))]
     [`(lambda ,(list args ...) ,body)
       (lambda host-args
         (cps-letrec body
