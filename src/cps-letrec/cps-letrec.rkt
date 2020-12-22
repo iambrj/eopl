@@ -32,32 +32,39 @@
 
 ; Leads to dirty behaviour when let binding let, quote, lambda etc
 ; Not Dijkstra guards
-(define (cps-letrec expr [env init-env])
+(define (cps-letrec expr [env init-env] [k identity])
   (match expr
-    [(? number? expr) expr]
-    [(? boolean? expr) expr]
-    [(list 'quote expr) expr]
-    [(? symbol? expr) (env expr)]
+    [(? number? expr) (k expr)]
+    [(? boolean? expr) (k expr)]
+    [(list 'quote expr) (k expr)]
+    [(? symbol? expr) (k (env expr))]
     [(list 'if condition then-clause else-clause)
-     (if (cps-letrec condition env)
-       (cps-letrec then-clause env)
-       (cps-letrec else-clause env))]
+     (cps-letrec condition env
+                 (lambda (b)
+                   (if b
+                     (cps-letrec then-clause env k)
+                     (cps-letrec else-clause env k))))]
     [(list 'let (list bindings ...) body)
-     (cps-letrec body (foldr (lambda (binding env)
-                               (ext-env (first binding)
-                                        (cps-letrec (second binding) env)
-                                        env))
-                             env
-                             bindings))]
+     (cps-letrec body
+                 (foldr (lambda (binding env)
+                          (ext-env (first binding)
+                                   (cps-letrec (second binding) env)
+                                   env))
+                        env
+                        bindings)
+                 k)]
     [(list 'letrec (list bindings ...) body)
-     (cps-letrec body (rec-ext-env bindings env))]
-    [`(lambda ,(list args ...) ,body)
-      (lambda host-args
+     (cps-letrec body (rec-ext-env bindings env) k)]
+    [(list 'lambda (list args ...) body)
+      (lambda (cont . host-args)
+; Yes, indeed valid tail recursion!
+; https://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-6.html#%_sec_3.5
         (cps-letrec body
                     (foldr ext-env
                            env
                            args
-                           host-args)))]
+                           host-args)
+                    cont))]
     [(list rator rands ...)
-     (apply (cps-letrec rator env)
-            (map (lambda (rand) (cps-letrec rand env)) rands))]))
+     (k ((cps-letrec rator env)
+         (map (lambda (rand) (cps-letrec rand env)) rands)))]))
