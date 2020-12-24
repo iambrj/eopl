@@ -14,7 +14,6 @@
       (if p
         (cps-letrec (second p) (rec-ext-env bindings env))
         (env x)))))
-
 (define empty-env
   (lambda (x)
     (error x ": missing binding")))
@@ -23,48 +22,57 @@
   (foldr ext-env
          empty-env
          '(+ - * / zero? not)
-         `(,(lambda (u v) (+ u v))
-            ,(lambda (u v) (- u v))
-            ,(lambda (u v) (* u v))
-            ,(lambda (u v) (/ u v))
-            ,(lambda (x) (= x 0))
-            ,(lambda (x) (not x)))))
+         `(,(lambda (k u v) (k (+ u v)))
+            ,(lambda (k u v) (k (- u v)))
+            ,(lambda (k u v) (k (* u v)))
+            ,(lambda (k u v) (k (/ u v)))
+            ,(lambda (k x) (k (= x 0)))
+            ,(lambda (k x) (k (not x))))))
 
 ; Leads to dirty behaviour when let binding let, quote, lambda etc
-; Not Dijkstra guards
 (define (cps-letrec expr [env init-env] [k identity])
   (match expr
     [(? number? expr) (k expr)]
     [(? boolean? expr) (k expr)]
-    [(list 'quote expr) (k expr)]
+    [`(quote ,expr) (k expr)]
     [(? symbol? expr) (k (env expr))]
-    [(list 'if condition then-clause else-clause)
+    [`(if ,condition ,then-clause ,else-clause)
      (cps-letrec condition env
                  (lambda (b)
                    (if b
                      (cps-letrec then-clause env k)
                      (cps-letrec else-clause env k))))]
-    [(list 'let (list bindings ...) body)
-     (cps-letrec body
-                 (foldr (lambda (binding env)
-                          (ext-env (first binding)
-                                   (cps-letrec (second binding) env)
-                                   env))
-                        env
-                        bindings)
-                 k)]
-    [(list 'letrec (list bindings ...) body)
-     (cps-letrec body (rec-ext-env bindings env) k)]
-    [(list 'lambda (list args ...) body)
-      (lambda (cont . host-args)
-; Yes, indeed valid tail recursion!
-; https://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-6.html#%_sec_3.5
-        (cps-letrec body
-                    (foldr ext-env
-                           env
-                           args
-                           host-args)
-                    cont))]
-    [(list rator rands ...)
-     (k ((cps-letrec rator env)
-         (map (lambda (rand) (cps-letrec rand env)) rands)))]))
+    [`(let (,bindings ...) ,body)
+      (letrec ([env-builder
+                 (lambda (bindings env-so-far)
+                   (match bindings
+                     ['() (cps-letrec body env-so-far k)]
+                     [`((,x ,e) . ,rest)
+                       (cps-letrec e
+                                   env
+                                   (lambda (v)
+                                     (env-builder rest
+                                                  (ext-env x v env-so-far))))]))])
+        (env-builder bindings env))]
+    [`(letrec (,bindings ...) ,body)
+     (letrec ([env-builder
+                (lambda (bindings env-so-far)
+                  (match bindings
+                    ['() (cps-letrec body env-so-far k)]
+                    [`((,x ,e) . ,rest)
+                      (cps-letrec e
+                                  (rec-ext-env bindings env)
+                                  (lambda (v)
+                                    (env-builder rest
+                                                 (ext-env x v env-so-far))))]))])
+       (env-builder bindings env))]
+    [`(lambda (,args ...) ,body)
+     (lambda (host-args)
+       (cps-letrec body
+                   (foldr ext-env
+                          env
+                          args
+                          host-args)))]
+    [`(,rator ,rands ...)
+     (apply (cps-letrec rator env)
+            (map (lambda (rand) (cps-letrec rand env k)) rands))]))
