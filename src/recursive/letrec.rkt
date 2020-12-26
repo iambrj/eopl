@@ -24,8 +24,9 @@
 (define init-env
   (foldr ext-env
          empty-env
-         '(+ - * / zero? not)
-         `(,(lambda (u v) (+ u v))
+         '(printf + - * / zero? not)
+         `(,printf
+            ,(lambda (u v) (+ u v))
             ,(lambda (u v) (- u v))
             ,(lambda (u v) (* u v))
             ,(lambda (u v) (/ u v))
@@ -38,6 +39,7 @@
   (match expr
     [(? number? expr) expr]
     [(? boolean? expr) expr]
+    [(? string? expr) expr]
     [`(quote ,expr) expr]
     [(? symbol? expr) (env expr)]
     [`(if ,condition ,then-clause ,else-clause)
