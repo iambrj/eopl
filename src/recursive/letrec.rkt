@@ -1,5 +1,5 @@
 #lang racket
-(provide cps-letrec)
+(provide letrec-eval)
 
 (define (ext-env u v env)
   (lambda (x)
@@ -12,7 +12,7 @@
   (lambda (x)
     (let ([p (assoc x bindings)])
       (if p
-        (cps-letrec (second p) (rec-ext-env bindings env))
+        (letrec-eval (second p) (rec-ext-env bindings env))
         (env x)))))
 
 (define empty-env
@@ -32,32 +32,32 @@
 
 ; Leads to dirty behaviour when let binding let, quote, lambda etc
 ; Not Dijkstra guards
-(define (cps-letrec expr [env init-env])
+(define (letrec-eval expr [env init-env])
   (match expr
     [(? number? expr) expr]
     [(? boolean? expr) expr]
     [(list 'quote expr) expr]
     [(? symbol? expr) (env expr)]
     [(list 'if condition then-clause else-clause)
-     (if (cps-letrec condition env)
-       (cps-letrec then-clause env)
-       (cps-letrec else-clause env))]
+     (if (letrec-eval condition env)
+       (letrec-eval then-clause env)
+       (letrec-eval else-clause env))]
     [(list 'let (list bindings ...) body)
-     (cps-letrec body (foldr (lambda (binding env)
+     (letrec-eval body (foldr (lambda (binding env)
                                (ext-env (first binding)
-                                        (cps-letrec (second binding) env)
+                                        (letrec-eval (second binding) env)
                                         env))
                              env
                              bindings))]
     [(list 'letrec (list bindings ...) body)
-     (cps-letrec body (rec-ext-env bindings env))]
+     (letrec-eval body (rec-ext-env bindings env))]
     [`(lambda ,(list args ...) ,body)
       (lambda host-args
-        (cps-letrec body
+        (letrec-eval body
                     (foldr ext-env
                            env
                            args
                            host-args)))]
     [(list rator rands ...)
-     (apply (cps-letrec rator env)
-            (map (lambda (rand) (cps-letrec rand env)) rands))]))
+     (apply (letrec-eval rator env)
+            (map (lambda (rand) (letrec-eval rand env)) rands))]))
