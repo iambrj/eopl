@@ -12,6 +12,8 @@
   (lambda (x)
     (let ([p (assoc x bindings)])
       (if p
+        ; Incorrect! This evaluates each time the binding is called, semantics
+        ; specify single evaluation
         (letrec-eval (second p) (rec-ext-env bindings env))
         (env x)))))
 
@@ -36,28 +38,28 @@
   (match expr
     [(? number? expr) expr]
     [(? boolean? expr) expr]
-    [(list 'quote expr) expr]
+    [`(quote ,expr) expr]
     [(? symbol? expr) (env expr)]
-    [(list 'if condition then-clause else-clause)
+    [`(if ,condition ,then-clause ,else-clause)
      (if (letrec-eval condition env)
        (letrec-eval then-clause env)
        (letrec-eval else-clause env))]
-    [(list 'let (list bindings ...) body)
+    [`(let (,bindings ...) ,body)
      (letrec-eval body (foldr (lambda (binding env)
                                (ext-env (first binding)
                                         (letrec-eval (second binding) env)
                                         env))
                              env
                              bindings))]
-    [(list 'letrec (list bindings ...) body)
+    [`(letrec (,bindings ...) ,body)
      (letrec-eval body (rec-ext-env bindings env))]
-    [`(lambda ,(list args ...) ,body)
+    [`(lambda (,args ...) ,body)
       (lambda host-args
         (letrec-eval body
                     (foldr ext-env
                            env
                            args
                            host-args)))]
-    [(list rator rands ...)
+    [`(,rator ,rands ...)
      (apply (letrec-eval rator env)
             (map (lambda (rand) (letrec-eval rand env)) rands))]))
