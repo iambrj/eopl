@@ -53,8 +53,23 @@
                                         env))
                              env
                              bindings))]
-    [`(letrec (,bindings ...) ,body)
-     (letrec-eval body (rec-ext-env bindings env))]
+    [`(letrec (,bindings ...) ,body) ; assumes unique identifier
+      (define rec-env (map (lambda (binding)
+                             (cons (car binding) 'undefined))
+                           bindings))
+      (letrec-eval body
+                   (begin
+                     (map (lambda (binding pos)
+                            (let ([val (letrec-eval (second binding) rec-env)])
+                              (set! rec-env (list-set rec-env pos (cons (car binding) val)))))
+                          bindings
+                          (build-list (length bindings) values))
+                     (foldr (lambda (binding env-so-far)
+                              (ext-env (car binding)
+                                       (cdr binding)
+                                       env-so-far))
+                            env
+                            rec-env)))]
     [`(lambda (,args ...) ,body)
       (lambda host-args
         (letrec-eval body
