@@ -17,6 +17,12 @@
         (letrec-eval (second p) (rec-ext-env bindings env))
         (env x)))))
 
+(define (rec-ext-env-1 bind val env)
+  (lambda (x)
+    (if (eq? x bind)
+      (letrec-eval bind val)
+      (env x))))
+
 (define empty-env
   (lambda (x)
     (error x ": missing binding")))
@@ -53,6 +59,13 @@
                                         env))
                              env
                              bindings))]
+    [`(letrec ([,bind ,val]) ,body)
+      (letrec-eval body (let ([rec-env env])
+                                   (let ([val (letrec-eval val rec-env)])
+                                     (set! rec-env (ext-env bind val env))
+                                     rec-env)))]
+    ; rho bind -> (letrec-eval val rho)
+    ; rho nonbind -> (outer nonbind)
     [`(letrec (,bindings ...) ,body) ; assumes unique identifier
       (define rec-env (map (lambda (binding)
                              (cons (car binding) 'undefined))
@@ -64,12 +77,14 @@
                               (set! rec-env (list-set rec-env pos (cons (car binding) val)))))
                           bindings
                           (build-list (length bindings) values))
-                     (foldr (lambda (binding env-so-far)
-                              (ext-env (car binding)
-                                       (cdr binding)
-                                       env-so-far))
-                            env
-                            rec-env)))]
+                     (let ([actual-env (foldr (lambda (binding env-so-far)
+                                                (ext-env (car binding)
+                                                         (cdr binding)
+                                                         env-so-far))
+                                              env
+                                              rec-env)])
+                       (set! rec-env actual-env))))
+      rec-env]
     [`(lambda (,args ...) ,body)
       (lambda host-args
         (letrec-eval body
