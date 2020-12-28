@@ -77,35 +77,67 @@
     (test-case
       "letrec double"
       (check-equal? (letrec-eval '(letrec ([double (lambda (x)
-                                                    (if (zero? x)
-                                                      0
-                                                      (+ 2 (double (- x 1)))))])
-                                   (double 3)))
+                                                     (if (zero? x)
+                                                       0
+                                                       (+ 2 (double (- x 1)))))])
+                                    (double 3)))
                     6))
     (test-case
       "letrec mutual recursion 1"
       (check-equal? (letrec-eval '(letrec ([even? (lambda (x) (if (zero? x) #t (odd? (- x 1))))]
-                                          [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
-                                   (even? 4)))
+                                           [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
+                                    (even? 4)))
                     #t))
     (test-case
       "letrec mutual recursion 2"
       (check-equal? (letrec-eval '(letrec ([even? (lambda (x) (if (zero? x) #t (not (- x 1))))]
-                                          [odd? (lambda (x) (if (zero? x) #f (not (- x 1))))])
-                                   (odd? 4)))
+                                           [odd? (lambda (x) (if (zero? x) #f (not (- x 1))))])
+                                    (odd? 4)))
                     #f))
     (test-case
       "letrec mutual recursion 3"
       (check-equal? (letrec-eval '(letrec ([even? (lambda (x) (if (zero? x) #t (odd? (- x 1))))]
-                                          [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
-                                   (even? 5)))
+                                           [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
+                                    (even? 5)))
                     #f))
     (test-case
       "letrec mutual recursion 4"
       (check-equal? (letrec-eval '(letrec ([even? (lambda (x) (if (zero? x) #t (odd? (- x 1))))]
-                                          [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
-                                   (odd? 5)))
-                    #t))))
+                                           [odd? (lambda (x) (if (zero? x) #f (even? (- x 1))))])
+                                    (odd? 5)))
+                    #t))
+    (test-case
+      "letrec non mutual recursion 1"
+      (check-equal? (letrec-eval '(letrec ([double (lambda (x)
+                                                     (if (zero? x)
+                                                       0
+                                                       (+ 2 (double (- x 1)))))])
+                                    (double 5)))
+                    10))
+    (test-case
+      "letrec non mutual recursion 2"
+      (check-equal? (letrec-eval '(letrec ([double (lambda (x)
+                                                     (if (zero? x)
+                                                       0
+                                                       (+ 2 (double (- x 1)))))])
+                                    (double 0)))
+                    0))
+    (test-case
+      "letrec non mutual recursion 3"
+      (check-equal? (letrec-eval '(letrec ([factorial (lambda (x)
+                                                        (if (zero? x)
+                                                          1
+                                                          (* x (factorial (- x 1)))))])
+                                    (factorial 5)))
+                    120))
+    (test-case
+      "letrec non mutual recursion 3"
+      (check-equal? (letrec-eval '(letrec ([factorial (lambda (x)
+                                                        (if (zero? x)
+                                                          1
+                                                          (* x (factorial (- x 1)))))])
+                                    (factorial 0)))
+                    1))))
 
 (run-tests value-tests 'verbose)
 (run-tests expression-tests 'verbose)
