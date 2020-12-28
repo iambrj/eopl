@@ -26,7 +26,6 @@
             ,(lambda (x) (= x 0))
             ,(lambda (x) (not x)))))
 
-; Leads to dirty behaviour when let binding let, quote, lambda etc
 ; Not Dijkstra guards
 (define (letrec-eval expr [env init-env])
   (match expr
@@ -50,12 +49,7 @@
                                         env))
                              env
                              bindings))]
-    [`(letrec ([,bind ,val]) ,body)
-      (letrec-eval body (let ([rec-env (ext-env bind (box 'undefined) env)])
-                                   (let ([val (letrec-eval val rec-env)])
-                                     (set-env! bind val rec-env)
-                                     rec-env)))]
-    [`(letrec (,bindings ...) ,body) ; assumes unique identifier
+    [`(letrec (,bindings ...) ,body) ; assumes unique identifiers
       (letrec-eval body
                    (let ([rec-env (foldr (lambda (binding env-so-far)
                                            (ext-env (first binding)
@@ -63,15 +57,15 @@
                                                     env-so-far))
                                          env
                                          bindings)])
-                     (let ([rec-vals (foldr (lambda (binding vals-so-far)
-                                              (letrec-eval (second binding)
-                                                           rec-env)
-                                              '()
-                                              bindings))])
+                     (let ([rec-vals (map (lambda (binding)
+                                            (letrec-eval (second binding)
+                                                         rec-env))
+                                          bindings)])
                        (map (lambda (binding val)
                               (set-env! (first binding) val rec-env))
                             bindings
-                            rec-vals))))]
+                            rec-vals))
+                     rec-env))]
     [`(lambda (,args ...) ,body)
       (lambda host-args
         (letrec-eval body
