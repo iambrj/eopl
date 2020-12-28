@@ -62,7 +62,10 @@
     [`(letrec ([,bind ,val]) ,body)
       (letrec-eval body (let ([rec-env env])
                                    (let ([val (letrec-eval val rec-env)])
-                                     (set! rec-env (ext-env bind val env))
+                                     (set! rec-env (lambda (x)
+                                                     (if (eq? x bind)
+                                                       val
+                                                       (env x))))
                                      rec-env)))]
     ; rho bind -> (letrec-eval val rho)
     ; rho nonbind -> (outer nonbind)
