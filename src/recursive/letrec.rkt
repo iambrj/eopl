@@ -7,6 +7,9 @@
       v
       (env x))))
 
+(define (set-env! bind val env)
+  (set-box! (env bind) val))
+
 ; pass the entire list?
 (define (rec-ext-env bindings env)
   (lambda (x)
@@ -47,7 +50,11 @@
     [(? boolean? expr) expr]
     [(? string? expr) expr]
     [`(quote ,expr) expr]
-    [(? symbol? expr) (env expr)]
+    [(? symbol? expr)
+     (let ([val (env expr)])
+       (if (box? val)
+         (unbox val)
+         val))]
     [`(if ,condition ,then-clause ,else-clause)
      (if (letrec-eval condition env)
        (letrec-eval then-clause env)
@@ -60,12 +67,9 @@
                              env
                              bindings))]
     [`(letrec ([,bind ,val]) ,body)
-      (letrec-eval body (let ([rec-env env])
+      (letrec-eval body (let ([rec-env (ext-env bind (box 'undefined) env)])
                                    (let ([val (letrec-eval val rec-env)])
-                                     (set! rec-env (lambda (x)
-                                                     (if (eq? x bind)
-                                                       val
-                                                       (env x))))
+                                     (set-env! bind val rec-env)
                                      rec-env)))]
     ; rho bind -> (letrec-eval val rho)
     ; rho nonbind -> (outer nonbind)
