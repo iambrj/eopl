@@ -10,22 +10,6 @@
 (define (set-env! bind val env)
   (set-box! (env bind) val))
 
-; pass the entire list?
-(define (rec-ext-env bindings env)
-  (lambda (x)
-    (let ([p (assoc x bindings)])
-      (if p
-        ; Incorrect! This evaluates each time the binding is called, semantics
-        ; specify single evaluation
-        (letrec-eval (second p) (rec-ext-env bindings env))
-        (env x)))))
-
-(define (rec-ext-env-1 bind val env)
-  (lambda (x)
-    (if (eq? x bind)
-      (letrec-eval bind val)
-      (env x))))
-
 (define empty-env
   (lambda (x)
     (error x ": missing binding")))
@@ -71,27 +55,23 @@
                                    (let ([val (letrec-eval val rec-env)])
                                      (set-env! bind val rec-env)
                                      rec-env)))]
-    ; rho bind -> (letrec-eval val rho)
-    ; rho nonbind -> (outer nonbind)
     [`(letrec (,bindings ...) ,body) ; assumes unique identifier
-      (define rec-env (map (lambda (binding)
-                             (cons (car binding) 'undefined))
-                           bindings))
       (letrec-eval body
-                   (begin
-                     (map (lambda (binding pos)
-                            (let ([val (letrec-eval (second binding) rec-env)])
-                              (set! rec-env (list-set rec-env pos (cons (car binding) val)))))
-                          bindings
-                          (build-list (length bindings) values))
-                     (let ([actual-env (foldr (lambda (binding env-so-far)
-                                                (ext-env (car binding)
-                                                         (cdr binding)
-                                                         env-so-far))
-                                              env
-                                              rec-env)])
-                       (set! rec-env actual-env))))
-      rec-env]
+                   (let ([rec-env (foldr (lambda (binding env-so-far)
+                                           (ext-env (first binding)
+                                                    (box 'undefined)
+                                                    env-so-far))
+                                         env
+                                         bindings)])
+                     (let ([rec-vals (foldr (lambda (binding vals-so-far)
+                                              (letrec-eval (second binding)
+                                                           rec-env)
+                                              '()
+                                              bindings))])
+                       (map (lambda (binding val)
+                              (set-env! (first binding) val rec-env))
+                            bindings
+                            rec-vals))))]
     [`(lambda (,args ...) ,body)
       (lambda host-args
         (letrec-eval body
