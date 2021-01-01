@@ -1,5 +1,7 @@
 #lang racket
-(provide cps-letrec)
+
+(provide cps-letrec
+         init-env)
 
 (define (ext-env u v env)
   (lambda (x)
@@ -26,12 +28,12 @@
   (foldr ext-env
          empty-env
          '(+ - * / zero? not)
-         `(,(lambda (k u v) (k (+ u v)))
-            ,(lambda (k u v) (k (- u v)))
-            ,(lambda (k u v) (k (* u v)))
-            ,(lambda (k u v) (k (/ u v)))
-            ,(lambda (k x) (k (= x 0)))
-            ,(lambda (k x) (k (not x))))))
+         `(,(lambda (u v) (+ u v))
+            ,(lambda (u v) (- u v))
+            ,(lambda (u v) (* u v))
+            ,(lambda (u v) (/ u v))
+            ,(lambda (x) (= x 0))
+            ,(lambda (x) (not x)))))
 
 ; Leads to dirty behaviour when let binding let, quote, lambda etc
 (define (cps-letrec expr env k)
@@ -49,6 +51,32 @@
                     (if b
                       (cps-letrec then-clause env k)
                       (cps-letrec else-clause env k))))]
+    ; Wrong? Need to eval body, then pass result to continuation that creates a
+    ; lambda expression
+    [`(lambda (,args ...) ,body)
+      (k (lambda host-args
+           (cps-letrec body
+                       (foldr ext-env
+                              env
+                              args
+                              host-args)
+                       identity)))]
+    [`(,rator ,rands ...)
+      (cps-letrec rator
+                  env
+                  (lambda (rator)
+                    (k (letrec ([eval-rands
+                                  (lambda (rands rand-vals)
+                                    (match rands
+                                      ['() (apply rator rand-vals)]
+                                      [`(,a . ,rest)
+                                        (cps-letrec a
+                                                    env
+                                                    (lambda (a-val)
+                                                      (eval-rands rest
+                                                                  (cons a-val
+                                                                        rand-vals))))]))])
+                         (eval-rands rands '())))))]
     [`(let (,bindings ...) ,body)
       (letrec ([env-builder
                  (lambda (bindings env-so-far)
@@ -76,21 +104,4 @@
                                                     (lambda (val)
                                                       (set-env! bind val rec-env)
                                                       (rec-env-builder rest)))]))])
-          (rec-env-builder bindings)))]
-    ; Wrong? Need to eval body, then pass result to continuation that creates a
-    ; lambda expression
-    [`(lambda (,args ...) ,body)
-      (k (lambda (cont . host-args)
-           (cps-letrec body
-                       (foldr ext-env
-                              env
-                              args
-                              host-args)
-                       cont)))]
-    [`(,rator ,rands ...)
-      (cps-letrec rator
-                  env
-                  (lambda (rator)
-                    (k (apply rator (map (lambda (rand)
-                                           (cps-letrec rand env identity))
-                                         rands)))))]))
+          (rec-env-builder bindings)))]))
