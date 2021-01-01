@@ -7,6 +7,9 @@
       v
       (env x))))
 
+(define (set-env! u v env)
+  (set-box! (env u) (box v)))
+
 ; pass the entire list?
 (define (rec-ext-env bindings env)
   (lambda (x)
@@ -14,6 +17,7 @@
       (if p
         (cps-letrec (second p) (rec-ext-env bindings env))
         (env x)))))
+
 (define empty-env
   (lambda (x)
     (error x ": missing binding")))
@@ -30,18 +34,21 @@
             ,(lambda (k x) (k (not x))))))
 
 ; Leads to dirty behaviour when let binding let, quote, lambda etc
-(define (cps-letrec expr [env init-env] [k identity])
+(define (cps-letrec expr env k)
   (match expr
+    ['identity identity]
     [(? number? expr) (k expr)]
     [(? boolean? expr) (k expr)]
     [`(quote ,expr) (k expr)]
-    [(? symbol? expr) (k (env expr))]
+    [(? symbol? expr)
+     (let ([val (env expr)])
+       (if (box? val) (k (unbox val)) (k val)))]
     [`(if ,condition ,then-clause ,else-clause)
-     (cps-letrec condition env
-                 (lambda (b)
-                   (if b
-                     (cps-letrec then-clause env k)
-                     (cps-letrec else-clause env k))))]
+      (cps-letrec condition env
+                  (lambda (b)
+                    (if b
+                      (cps-letrec then-clause env k)
+                      (cps-letrec else-clause env k))))]
     [`(let (,bindings ...) ,body)
       (letrec ([env-builder
                  (lambda (bindings env-so-far)
@@ -55,24 +62,35 @@
                                                   (ext-env x v env-so-far))))]))])
         (env-builder bindings env))]
     [`(letrec (,bindings ...) ,body)
-     (letrec ([env-builder
-                (lambda (bindings env-so-far)
-                  (match bindings
-                    ['() (cps-letrec body env-so-far k)]
-                    [`((,x ,e) . ,rest)
-                      (cps-letrec e
-                                  (rec-ext-env bindings env)
-                                  (lambda (v)
-                                    (env-builder rest
-                                                 (ext-env x v env-so-far))))]))])
-       (env-builder bindings env))]
+      (let ([rec-env (foldr (lambda (binding env-so-far)
+                              (ext-env (first binding)
+                                       (box 'undefined)
+                                       env-so-far))
+                            env
+                            bindings)])
+        (letrec ([rec-env-builder (lambda (bindings)
+                                    (match bindings
+                                      ['() (cps-letrec body rec-env k)]
+                                      [`((,bind ,val) ,rest)
+                                        (cps-letrec val rec-env
+                                                    (lambda (val)
+                                                      (set-env! bind val rec-env)
+                                                      (rec-env-builder rest)))]))])
+          (rec-env-builder bindings)))]
+    ; Wrong? Need to eval body, then pass result to continuation that creates a
+    ; lambda expression
     [`(lambda (,args ...) ,body)
-     (lambda (host-args)
-       (cps-letrec body
-                   (foldr ext-env
-                          env
-                          args
-                          host-args)))]
+      (k (lambda (cont . host-args)
+           (cps-letrec body
+                       (foldr ext-env
+                              env
+                              args
+                              host-args)
+                       cont)))]
     [`(,rator ,rands ...)
-     (apply (cps-letrec rator env)
-            (map (lambda (rand) (cps-letrec rand env k)) rands))]))
+      (cps-letrec rator
+                  env
+                  (lambda (rator)
+                    (k (apply rator (map (lambda (rand)
+                                           (cps-letrec rand env identity))
+                                         rands)))))]))
