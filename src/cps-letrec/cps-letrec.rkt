@@ -28,17 +28,60 @@
   (foldr ext-env
          empty-env
          '(+ - * / zero? not)
-         `(,(lambda (u v) (+ u v))
-            ,(lambda (u v) (- u v))
-            ,(lambda (u v) (* u v))
-            ,(lambda (u v) (/ u v))
-            ,(lambda (x) (= x 0))
-            ,(lambda (x) (not x)))))
+         `(,(lambda (k u v) (k (+ u v)))
+            ,(lambda (k u v) (k (- u v)))
+            ,(lambda (k u v) (k (* u v)))
+            ,(lambda (k u v) (k (/ u v)))
+            ,(lambda (k x) (k (= x 0)))
+            ,(lambda (k x) (k (not x))))))
 
 ; Leads to dirty behaviour when let binding let, quote, lambda etc
 (define (cps-letrec expr env k)
   (match expr
-    ['identity identity]
+    [`(+ ,x ,y)
+      (cps-letrec x env
+                  (lambda (x)
+                    (cps-letrec y env
+                                (lambda (y)
+                                  (k (+ x y))))))]
+    [`(- ,x ,y)
+      (cps-letrec x env
+                  (lambda (x)
+                    (cps-letrec y env
+                                (lambda (y)
+                                  (k (- x y))))))]
+    [`(* ,x ,y)
+      (cps-letrec x env
+                  (lambda (x)
+                    (cps-letrec y env
+                                (lambda (y)
+                                  (k (* x y))))))]
+    [`(/ ,x ,y)
+      (cps-letrec x env
+                  (lambda (x)
+                    (cps-letrec y env
+                                (lambda (y)
+                                  (k (/ x y))))))]
+    [`(zero? ,x)
+      (cps-letrec x env
+                  (lambda (x)
+                    (k (zero? x))))]
+    [`(not ,x)
+      (cps-letrec x env
+                  (lambda (x)
+                    (k (not x))))]
+    [`(and ,x ,y)
+      (cps-letrec x env
+                  (lambda (x)
+                    (cps-letrec y env
+                                (lambda (y)
+                                  (k (and x y))))))]
+    [`(or ,x ,y)
+      (cps-letrec x env
+                  (lambda (x)
+                    (cps-letrec y env
+                                (lambda (y)
+                                  (k (or x y))))))]
     [(? number? expr) (k expr)]
     [(? boolean? expr) (k expr)]
     [`(quote ,expr) (k expr)]
@@ -54,21 +97,30 @@
     ; Wrong? Need to eval body, then pass result to continuation that creates a
     ; lambda expression
     [`(lambda (,args ...) ,body)
-      (k (lambda host-args
-           (cps-letrec body
-                       (foldr ext-env
-                              env
-                              args
-                              host-args)
-                       identity)))]
+      (k (lambda (cont . host-args)
+           (letrec ([env-builder
+                      (lambda (args host-args env-so-far)
+                        (match host-args
+                          ['() (cps-letrec body env-so-far cont)]
+                          [`(,a . ,d)
+                            (cps-letrec a
+                                        env
+                                        (lambda (a-val)
+                                          (env-builder (cdr args)
+                                                       d
+                                                       (ext-env (car args)
+                                                                a-val
+                                                                env-so-far))))]))])
+             (env-builder args host-args env))))]
     [`(,rator ,rands ...)
       (cps-letrec rator
                   env
                   (lambda (rator)
-                    (k (letrec ([eval-rands
+                    (letrec ([eval-rands
                                   (lambda (rands rand-vals)
                                     (match rands
-                                      ['() (apply rator rand-vals)]
+                                      ['()
+                                       (apply rator (cons k rand-vals))]
                                       [`(,a . ,rest)
                                         (cps-letrec a
                                                     env
@@ -76,7 +128,7 @@
                                                       (eval-rands rest
                                                                   (cons a-val
                                                                         rand-vals))))]))])
-                         (eval-rands rands '())))))]
+                         (eval-rands rands '()))))]
     [`(let (,bindings ...) ,body)
       (letrec ([env-builder
                  (lambda (bindings env-so-far)
