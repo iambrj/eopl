@@ -27,7 +27,7 @@
 (define init-env
   (foldr ext-env
          empty-env
-         '(+ - * / zero? not and or)
+         '(+ - * / zero? not and or identity)
          `(,(lambda (k u v) (k (+ u v)))
             ,(lambda (k u v) (k (- u v)))
             ,(lambda (k u v) (k (* u v)))
@@ -35,7 +35,8 @@
             ,(lambda (k x) (k (= x 0)))
             ,(lambda (k x) (k (not x)))
             ,(lambda (k u v) (k (and u v)))
-            ,(lambda (k u v) (k (or u v))))))
+            ,(lambda (k u v) (k (or u v)))
+            ,(lambda (k u) (k u)))))
 
 ; Leads to dirty behaviour when let binding let, quote, lambda etc
 (define (cps-letrec expr env k)
@@ -52,6 +53,34 @@
                     (if b
                       (cps-letrec then-clause env k)
                       (cps-letrec else-clause env k))))]
+    [`(let (,bindings ...) ,body)
+      (letrec ([env-builder
+                 (lambda (bindings env-so-far)
+                   (match bindings
+                     ['() (cps-letrec body env-so-far k)]
+                     [`((,x ,e) . ,rest)
+                       (cps-letrec e
+                                   env
+                                   (lambda (v)
+                                     (env-builder rest
+                                                  (ext-env x v env-so-far))))]))])
+        (env-builder bindings env))]
+    [`(letrec (,bindings ...) ,body)
+      (let ([rec-env (foldr (lambda (binding env-so-far)
+                              (ext-env (first binding)
+                                       (box 'undefined)
+                                       env-so-far))
+                            env
+                            bindings)])
+        (letrec ([rec-env-builder (lambda (bindings)
+                                    (match bindings
+                                      ['() (cps-letrec body rec-env k)]
+                                      [`((,bind ,val) ,rest)
+                                        (cps-letrec val rec-env
+                                                    (lambda (val)
+                                                      (set-env! bind val rec-env)
+                                                      (rec-env-builder rest)))]))])
+          (rec-env-builder bindings)))]
     ; Wrong? Need to eval body, then pass result to continuation that creates a
     ; lambda expression
     [`(lambda (,args ...) ,body)
@@ -86,32 +115,4 @@
                                                    (eval-rands rest
                                                                (append rand-vals
                                                                        `(,a-val)))))]))])
-                      (eval-rands rands '()))))]
-    [`(let (,bindings ...) ,body)
-      (letrec ([env-builder
-                 (lambda (bindings env-so-far)
-                   (match bindings
-                     ['() (cps-letrec body env-so-far k)]
-                     [`((,x ,e) . ,rest)
-                       (cps-letrec e
-                                   env
-                                   (lambda (v)
-                                     (env-builder rest
-                                                  (ext-env x v env-so-far))))]))])
-        (env-builder bindings env))]
-    [`(letrec (,bindings ...) ,body)
-      (let ([rec-env (foldr (lambda (binding env-so-far)
-                              (ext-env (first binding)
-                                       (box 'undefined)
-                                       env-so-far))
-                            env
-                            bindings)])
-        (letrec ([rec-env-builder (lambda (bindings)
-                                    (match bindings
-                                      ['() (cps-letrec body rec-env k)]
-                                      [`((,bind ,val) ,rest)
-                                        (cps-letrec val rec-env
-                                                    (lambda (val)
-                                                      (set-env! bind val rec-env)
-                                                      (rec-env-builder rest)))]))])
-          (rec-env-builder bindings)))]))
+                      (eval-rands rands '()))))]))
