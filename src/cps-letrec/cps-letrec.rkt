@@ -10,7 +10,7 @@
       (env x))))
 
 (define (set-env! u v env)
-  (set-box! (env u) (box v)))
+  (set-box! (env u) v))
 
 ; pass the entire list?
 (define (rec-ext-env bindings env)
@@ -75,8 +75,9 @@
         (letrec ([rec-env-builder (lambda (bindings)
                                     (match bindings
                                       ['() (cps-letrec body rec-env k)]
-                                      [`((,bind ,val) ,rest)
-                                        (cps-letrec val rec-env
+                                      [`((,bind ,val) . ,rest)
+                                        (cps-letrec val
+                                                    rec-env
                                                     (lambda (val)
                                                       (set-env! bind val rec-env)
                                                       (rec-env-builder rest)))]))])
